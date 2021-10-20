@@ -16,14 +16,14 @@ pub struct Scanner {
 }
 
 impl Scanner {
-    pub fn from_text(text: &str) -> Self {
+    pub fn from_text(text: &str) -> Peekable<Self> {
         Self {
             raw_text: text.chars().collect::<Vec<_>>().into_iter().peekable(),
             location: Location::default(),
-        }
+        }.peekable()
     }
 
-    pub fn from_file(file_path: &str) -> io::Result<Self> {
+    pub fn from_file(file_path: &str) -> io::Result<Peekable<Self>> {
         Ok(Self::from_text(&fs::read_to_string(file_path)?))
     }
 }
