@@ -41,14 +41,13 @@ impl Iterator for Scanner {
         loop {
             let mut c = self.raw_text.next()?;
             self.location.next_col();
-            while c.is_whitespace() {
-                if is_newline(&c) {
-                    self.location.next_line();
-                }
-                self.location.next_col();
-                c = self.raw_text.next()?;
-            }
             let token = match c {
+                c if c.is_whitespace() => {
+                    if is_newline(&c) {
+                        self.location.next_line();
+                    }
+                    continue;
+                }
                 '(' => Ok(Token::LParen(self.location)),
                 ')' => Ok(Token::RParen(self.location)),
                 '[' => Ok(Token::LBracket(self.location)),
