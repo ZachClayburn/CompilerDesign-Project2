@@ -15,12 +15,19 @@ pub struct Scanner {
     location: Location,
 }
 
+#[derive(Debug, PartialEq)]
+pub struct ScannerError {
+    pub message: String,
+    pub location: Location,
+}
+
 impl Scanner {
     pub fn from_text(text: &str) -> Peekable<Self> {
         Self {
             raw_text: text.chars().collect::<Vec<_>>().into_iter().peekable(),
             location: Location::default(),
-        }.peekable()
+        }
+        .peekable()
     }
 
     pub fn from_file(file_path: &str) -> io::Result<Peekable<Self>> {
@@ -28,7 +35,7 @@ impl Scanner {
     }
 }
 
-pub type Result<T> = std::result::Result<T, (String, Location)>;
+pub type Result<T> = std::result::Result<T, ScannerError>;
 
 fn is_newline(c: &char) -> bool {
     c == &'\n'
@@ -71,10 +78,10 @@ impl Iterator for Scanner {
                     loop {
                         let next_char = self.raw_text.next();
                         if let None = next_char {
-                            return Some(Err((
-                                "Unterminated block comment".to_string(),
-                                start_pos,
-                            )));
+                            return Some(Err(ScannerError {
+                                message: "Unterminated block comment".into(),
+                                location: start_pos,
+                            }));
                         }
                         self.location.next_col();
                         c = next_char?;
@@ -141,7 +148,10 @@ impl Iterator for Scanner {
                             stop: self.location,
                         })
                     } else {
-                        Err(("Unterminated string!".to_string(), start))
+                        Err(ScannerError {
+                            message: "Unterminated string!".into(),
+                            location: start,
+                        })
                     }
                 }
                 number if number.is_digit(10) => {
@@ -156,7 +166,10 @@ impl Iterator for Scanner {
                     let content = first_char + &rest;
                     let next = self.raw_text.peek();
                     if next.map_or(false, |x| x.is_alphabetic()) {
-                        Err(("Invalid Number".to_string(), start))
+                        Err(ScannerError {
+                            message: "Invalid Number".into(),
+                            location: start,
+                        })
                     } else {
                         Ok(Token::Number {
                             content,
@@ -203,13 +216,13 @@ impl Iterator for Scanner {
                         }),
                     }
                 }
-                unexpected => Err((
-                    format!(
+                unexpected => Err(ScannerError {
+                    message: format!(
                         "Unexpected token {}, ({:#X})",
                         unexpected, unexpected as i32
                     ),
-                    self.location,
-                )),
+                    location: self.location,
+                }),
             };
             return Some(token);
         }
@@ -371,10 +384,10 @@ mod tests {
                 line: 7,
                 column: 60,
             })),
-            Err((
-                "Unterminated block comment".into(),
-                Location { line: 8, column: 1 },
-            )),
+            Err(ScannerError {
+                message: "Unterminated block comment".into(),
+                location: Location { line: 8, column: 1 },
+            }),
         ];
         assert_eq!(expected, tokens);
     }
@@ -428,10 +441,10 @@ mod tests {
                     column: 15,
                 },
             }),
-            Err((
-                "Unterminated string!".into(),
-                Location { line: 4, column: 1 },
-            )),
+            Err(ScannerError {
+                message: "Unterminated string!".into(),
+                location: Location { line: 4, column: 1 },
+            }),
         ];
         assert_eq!(tokens, expected);
     }
@@ -451,7 +464,10 @@ mod tests {
                 start: Location { line: 1, column: 3 },
                 stop: Location { line: 1, column: 5 },
             }),
-            Err(("Invalid Number".into(), Location { line: 1, column: 7 })),
+            Err(ScannerError {
+                message: "Invalid Number".into(),
+                location: Location { line: 1, column: 7 },
+            }),
             Ok(Identifier {
                 content: "a".into(),
                 start: Location { line: 1, column: 9 },
