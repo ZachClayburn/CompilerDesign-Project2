@@ -18,15 +18,15 @@ impl Table {
             }
             (Expr, Some(LParen(_))) | (Expr, Some(Number(_))) | (Expr, Some(Identifier(_))) => {
                 trace!("Running rule 1");
-                Some(vec![Left(Term), Left(ExprPrime)])
+                Some(vec![Left(ExprPrime), Left(Term)])
             }
             (ExprPrime, Some(Plus(info))) => {
                 trace!("Running rule 2");
-                Some(vec![Right(Some(Plus(*info))), Left(Term), Left(ExprPrime)])
+                Some(vec![Left(ExprPrime), Left(Term), Right(Some(Plus(*info)))])
             }
             (ExprPrime, Some(Minus(info))) => {
                 trace!("Running rule 3");
-                Some(vec![Right(Some(Minus(*info))), Left(Term), Left(ExprPrime)])
+                Some(vec![Left(ExprPrime), Left(Term), Right(Some(Minus(*info)))])
             }
             (ExprPrime, Some(RParen(_))) | (ExprPrime, None) => {
                 trace!("Running rule 4");
@@ -34,19 +34,19 @@ impl Table {
             }
             (Term, Some(LParen(_))) | (Term, Some(Number(_))) | (Term, Some(Identifier(_))) => {
                 trace!("Running rule 5");
-                Some(vec![Left(Factor), Left(TermPrime)])
+                Some(vec![Left(TermPrime), Left(Factor)])
             }
             (TermPrime, Some(Star(info))) => {
                 trace!("Running rule 6");
                 Some(vec![
-                    Right(Some(Star(*info))),
-                    Left(Factor),
                     Left(TermPrime),
+                    Left(Factor),
+                    Right(Some(Star(*info))),
                 ])
             }
             (TermPrime, Some(Div(info))) => {
                 trace!("Running rule 7");
-                Some(vec![Right(Some(Div(*info))), Left(Factor), Left(TermPrime)])
+                Some(vec![Left(TermPrime), Left(Factor), Right(Some(Div(*info)))])
             }
             (TermPrime, Some(RParen(_)))
             | (TermPrime, None)

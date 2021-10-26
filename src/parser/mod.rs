@@ -116,4 +116,11 @@ mod test {
             })
         )
     }
+
+    #[test]
+    fn single_number_does_not_error() {
+        let scan = Scanner::from_text("1");
+        let out = parse(scan);
+        assert!(out.is_ok());
+    }
 }
