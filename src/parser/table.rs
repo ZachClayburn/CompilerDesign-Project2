@@ -1,6 +1,11 @@
-use super::{Item, Left, NonTerminal, Right, Token};
-use NonTerminal::*;
-use Token::*;
+use log::trace;
+
+use super::{
+    Item, Left,
+    NonTerminal::{self, *},
+    Right,
+    Token::{self, *},
+};
 
 pub struct Table {}
 

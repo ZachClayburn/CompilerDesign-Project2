@@ -2,8 +2,10 @@ mod table;
 
 use std::iter::Peekable;
 
-use crate::scanner::*;
 use either::{Either, Either::Left, Either::Right};
+use log::debug;
+
+use crate::scanner::*;
 use table::Table;
 
 #[derive(Debug, PartialEq, Clone)]
