@@ -61,15 +61,12 @@ pub fn parse(mut scan: Peekable<Scanner>) -> Result<()> {
     stack.push(Right(None)); // None is represents eof
     stack.push(Left(NonTerminal::Goal));
     let table = Table {};
-    let mut focus = match stack.last() {
-        Some(item) => item.clone(),
-        None => todo!(),
-    };
+
     loop {
-        debug!("{:?}", stack);
-        match focus {
+        debug!("\nStack:{:?}\nWord: {:?}", stack, word);
+        match stack.last().unwrap() {
             Right(None) if word.is_none() => return Ok(()),
-            Right(terminal) if terminal == word => {
+            Right(terminal) if *terminal == word => {
                 stack.pop();
                 word = match scan.next() {
                     Some(Err(error)) => return Err(error.into()),
@@ -93,10 +90,6 @@ pub fn parse(mut scan: Peekable<Scanner>) -> Result<()> {
                 }
             }
         }
-        focus = match stack.last() {
-            Some(item) => item.clone(),
-            None => todo!(),
-        };
     }
 }
 
