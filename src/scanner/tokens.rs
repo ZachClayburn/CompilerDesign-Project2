@@ -2,23 +2,18 @@ use super::Location;
 use std::fmt::Display;
 
 #[derive(Debug, Clone, PartialEq)]
+pub struct TokenInfo {
+    pub content: String,
+    pub start: Location,
+    pub stop: Location,
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub enum Token {
     // Complex tokens
-    Number {
-        content: String,
-        start: Location,
-        stop: Location,
-    },
-    Identifier {
-        content: String,
-        start: Location,
-        stop: Location,
-    },
-    StringLiteral {
-        content: String,
-        start: Location,
-        stop: Location,
-    },
+    Number(TokenInfo),
+    Identifier(TokenInfo),
+    StringLiteral(TokenInfo),
     // keywords
     Program(Location),
     Begin(Location),
@@ -68,21 +63,21 @@ pub enum Token {
 impl Display for Token {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Token::Number {
+            Token::Number(TokenInfo {
                 content,
                 start: _,
                 stop: _,
-            } => write!(f, "Number: {}", content),
-            Token::Identifier {
+            }) => write!(f, "Number: {}", content),
+            Token::Identifier(TokenInfo {
                 content,
                 start: _,
                 stop: _,
-            } => write!(f, "Identifier: {}", content),
-            Token::StringLiteral {
+            }) => write!(f, "Identifier: {}", content),
+            Token::StringLiteral(TokenInfo {
                 content,
                 start: _,
                 stop: _,
-            } => write!(f, "StringLiteral: {}", content),
+            }) => write!(f, "StringLiteral: {}", content),
             Token::Program(_) => write!(f, "Program"),
             Token::Begin(_) => write!(f, "Begin"),
             Token::End(_) => write!(f, "End"),
@@ -132,21 +127,21 @@ impl Display for Token {
 impl Token {
     pub fn format_location(&self) -> String {
         match self {
-            Token::Number {
+            Token::Number(TokenInfo {
                 content: _,
                 start: loc,
                 stop: _,
-            }
-            | Token::Identifier {
+            })
+            | Token::Identifier(TokenInfo {
                 content: _,
                 start: loc,
                 stop: _,
-            }
-            | Token::StringLiteral {
+            })
+            | Token::StringLiteral(TokenInfo {
                 content: _,
                 start: loc,
                 stop: _,
-            }
+            })
             | Token::Program(loc)
             | Token::Begin(loc)
             | Token::End(loc)

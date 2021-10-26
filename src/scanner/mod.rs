@@ -7,7 +7,7 @@ use std::char;
 use std::iter::Peekable;
 use std::vec::IntoIter;
 use std::{fs, io};
-pub use tokens::Token;
+pub use tokens::{Token, TokenInfo};
 
 /// An iterable struct that produces the tokens of the given file
 pub struct Scanner {
@@ -142,11 +142,11 @@ impl Iterator for Scanner {
                         self.location.advance_col(content.len() + 1);
                     }
                     if let Some('"') = self.raw_text.next_if_eq(&'"') {
-                        Ok(Token::StringLiteral {
+                        Ok(Token::StringLiteral(TokenInfo {
                             content,
                             start,
                             stop: self.location,
-                        })
+                        }))
                     } else {
                         Err(ScannerError {
                             message: "Unterminated string!".into(),
@@ -171,11 +171,11 @@ impl Iterator for Scanner {
                             location: start,
                         })
                     } else {
-                        Ok(Token::Number {
+                        Ok(Token::Number(TokenInfo {
                             content,
                             start,
                             stop: self.location,
-                        })
+                        }))
                     }
                 }
                 letter if letter.is_ascii_alphabetic() => {
@@ -209,11 +209,11 @@ impl Iterator for Scanner {
                         "num" => Ok(Token::Num(start)),
                         "string" => Ok(Token::String(start)),
                         "return" => Ok(Token::Return(start)),
-                        _ => Ok(Token::Identifier {
+                        _ => Ok(Token::Identifier(TokenInfo {
                             content,
                             start,
                             stop: self.location,
-                        }),
+                        })),
                     }
                 }
                 unexpected => Err(ScannerError {
@@ -403,15 +403,15 @@ mod tests {
         let scan = Scanner::from_text(string_string);
         let tokens: Vec<<super::Scanner as Iterator>::Item> = scan.collect();
         let expected = vec![
-            Ok(StringLiteral {
+            Ok(StringLiteral(TokenInfo {
                 content: "This is a string".to_string(),
                 start: Location { line: 1, column: 1 },
                 stop: Location {
                     line: 1,
                     column: 18,
                 },
-            }),
-            Ok(StringLiteral {
+            })),
+            Ok(StringLiteral(TokenInfo {
                 content: "The next string will be empty".to_string(),
                 start: Location {
                     line: 1,
@@ -421,8 +421,8 @@ mod tests {
                     line: 1,
                     column: 50,
                 },
-            }),
-            Ok(StringLiteral {
+            })),
+            Ok(StringLiteral(TokenInfo {
                 content: "".to_string(),
                 start: Location {
                     line: 1,
@@ -432,15 +432,15 @@ mod tests {
                     line: 1,
                     column: 53,
                 },
-            }),
-            Ok(StringLiteral {
+            })),
+            Ok(StringLiteral(TokenInfo {
                 content: "This string spans\nmultiple lines".to_string(),
                 start: Location { line: 2, column: 1 },
                 stop: Location {
                     line: 3,
                     column: 15,
                 },
-            }),
+            })),
             Err(ScannerError {
                 message: "Unterminated string!".into(),
                 location: Location { line: 4, column: 1 },
@@ -454,25 +454,25 @@ mod tests {
         let scan = Scanner::from_text("1 123 12a");
         let tokens: Vec<<super::Scanner as Iterator>::Item> = scan.collect();
         let expected = vec![
-            Ok(Number {
+            Ok(Number(TokenInfo {
                 content: "1".to_string(),
                 start: Location { line: 1, column: 1 },
                 stop: Location { line: 1, column: 1 },
-            }),
-            Ok(Number {
+            })),
+            Ok(Number(TokenInfo {
                 content: "123".to_string(),
                 start: Location { line: 1, column: 3 },
                 stop: Location { line: 1, column: 5 },
-            }),
+            })),
             Err(ScannerError {
                 message: "Invalid Number".into(),
                 location: Location { line: 1, column: 7 },
             }),
-            Ok(Identifier {
+            Ok(Identifier(TokenInfo {
                 content: "a".into(),
                 start: Location { line: 1, column: 9 },
                 stop: Location { line: 1, column: 9 },
-            }),
+            })),
         ];
         assert_eq!(tokens, expected);
     }
@@ -482,15 +482,15 @@ mod tests {
         let scan = Scanner::from_text("notAKeyword Hasnumbers123 has_underscore");
         let tokens: Vec<Token> = scan.map(|x| x.unwrap()).collect();
         let expected = vec![
-            Identifier {
+            Identifier(TokenInfo {
                 content: "notAKeyword".to_string(),
                 start: Location { line: 1, column: 1 },
                 stop: Location {
                     line: 1,
                     column: 11,
                 },
-            },
-            Identifier {
+            }),
+            Identifier(TokenInfo {
                 content: "Hasnumbers123".to_string(),
                 start: Location {
                     line: 1,
@@ -500,8 +500,8 @@ mod tests {
                     line: 1,
                     column: 25,
                 },
-            },
-            Identifier {
+            }),
+            Identifier(TokenInfo {
                 content: "has_underscore".to_string(),
                 start: Location {
                     line: 1,
@@ -511,7 +511,7 @@ mod tests {
                     line: 1,
                     column: 40,
                 },
-            },
+            }),
         ];
         assert_eq!(tokens, expected);
     }
