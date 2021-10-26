@@ -66,6 +66,7 @@ pub fn parse(mut scan: Peekable<Scanner>) -> Result<()> {
         None => todo!(),
     };
     loop {
+        debug!("{:?}", stack);
         match focus {
             Right(None) if word.is_none() => return Ok(()),
             Right(terminal) if terminal == word => {
@@ -86,7 +87,9 @@ pub fn parse(mut scan: Peekable<Scanner>) -> Result<()> {
                     stack.pop();
                     stack.append(&mut new_items);
                 } else {
-                    todo!("Need to add good error reporting")
+                    return Err(
+                        format!("Error expanding {:?} with {:?}", non_terminal, word).into(),
+                    );
                 }
             }
         }
