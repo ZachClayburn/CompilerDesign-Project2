@@ -1,7 +1,10 @@
+mod table;
+
 use std::iter::Peekable;
 
 use crate::scanner::*;
 use either::{Either, Either::Left, Either::Right};
+use table::Table;
 
 #[derive(Debug, PartialEq, Clone)]
 enum NonTerminal {
@@ -47,35 +50,48 @@ type Item = Either<NonTerminal, Option<Token>>;
 pub type Result<T> = std::result::Result<T, ParseError>;
 
 pub fn parse(mut scan: Peekable<Scanner>) -> Result<()> {
-    let mut word: Item = Right(match scan.next() {
+    let mut word = match scan.next() {
         Some(Err(error)) => return Err(error.into()),
         Some(Ok(token)) => Some(token),
         None => None,
-    });
+    };
     let mut stack: Vec<Item> = Vec::new();
     stack.push(Right(None)); // None is represents eof
     stack.push(Left(NonTerminal::Goal));
-    let focus = match stack.last() {
+    let table = Table {};
+    let mut focus = match stack.last() {
         Some(item) => item.clone(),
         None => todo!(),
     };
     loop {
-        if let (Right(None), Right(None)) = (&focus, &word) {
-            return Ok(());
-        } else if focus.is_left() || focus.as_ref().map_right(|x| x.is_none()).right_or(false) {
-            if focus == word {
+        match focus {
+            Right(None) if word.is_none() => return Ok(()),
+            Right(terminal) if terminal == word => {
                 stack.pop();
-                word = Right(match scan.next() {
+                word = match scan.next() {
                     Some(Err(error)) => return Err(error.into()),
                     Some(Ok(token)) => Some(token),
                     None => None,
-                })
-            } else {
-                return Err(format!("Expected {:?}, but found {:?}", focus, word).into());
+                }
             }
-        } else {
-            // TODO
+            Right(bad_terminal) => {
+                return Err(
+                    format!("Error: Expected {:?}, but found {:?}", bad_terminal, word).into(),
+                )
+            }
+            Left(non_terminal) => {
+                if let Some(mut new_items) = table.at(&non_terminal, &word) {
+                    stack.pop();
+                    stack.append(&mut new_items);
+                } else {
+                    todo!("Need to add good error reporting")
+                }
+            }
         }
+        focus = match stack.last() {
+            Some(item) => item.clone(),
+            None => todo!(),
+        };
     }
 }
 
