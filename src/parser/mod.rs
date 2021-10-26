@@ -10,7 +10,7 @@ use table::Table;
 enum NonTerminal {
     Goal,
     Expr,
-    ExperPrime,
+    ExprPrime,
     Term,
     TermPrime,
     Factor,
