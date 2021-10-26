@@ -48,49 +48,44 @@ impl From<ScannerError> for ParseError {
     }
 }
 
-type Item = Either<NonTerminal, Option<Token>>;
+type Item = Either<NonTerminal, Token>;
 pub type Result<T> = std::result::Result<T, ParseError>;
 
-pub fn parse(mut scan: Peekable<Scanner>) -> Result<()> {
-    let mut word = match scan.next() {
-        Some(Err(error)) => return Err(error.into()),
-        Some(Ok(token)) => Some(token),
-        None => None,
-    };
+pub fn parse(scan: Peekable<Scanner>) -> Result<()> {
     let mut stack: Vec<Item> = Vec::new();
-    stack.push(Right(None)); // None is represents eof
+    stack.push(Right(Token::EOF));
     stack.push(Left(NonTerminal::Goal));
     let table = Table {};
 
-    loop {
-        debug!("\nStack:{:?}\nWord: {:?}", stack, word);
-        match stack.last().unwrap() {
-            Right(None) if word.is_none() => return Ok(()),
-            Right(terminal) if *terminal == word => {
-                stack.pop();
-                word = match scan.next() {
-                    Some(Err(error)) => return Err(error.into()),
-                    Some(Ok(token)) => Some(token),
-                    None => None,
-                }
-            }
-            Right(bad_terminal) => {
-                return Err(
-                    format!("Error: Expected {:?}, but found {:?}", bad_terminal, word).into(),
-                )
-            }
-            Left(non_terminal) => {
-                if let Some(mut new_items) = table.at(&non_terminal, &word) {
+    'outer: for item in scan {
+        let word = item?;
+        loop {
+            debug!("\nStack:{:?}\nWord: {:?}", stack, word);
+            match stack.last().unwrap() {
+                Right(Token::EOF) if word == Token::EOF => return Ok(()),
+                Right(terminal) if terminal == &word => {
                     stack.pop();
-                    stack.append(&mut new_items);
-                } else {
+                    continue 'outer;
+                }
+                Right(bad_terminal) => {
                     return Err(
-                        format!("Error expanding {:?} with {:?}", non_terminal, word).into(),
-                    );
+                        format!("Error: Expected {:?}, but found {:?}", bad_terminal, word).into(),
+                    )
+                }
+                Left(non_terminal) => {
+                    if let Some(mut new_items) = table.at(&non_terminal, &word) {
+                        stack.pop();
+                        stack.append(&mut new_items);
+                    } else {
+                        return Err(
+                            format!("Error expanding {:?} with {:?}", non_terminal, word).into(),
+                        );
+                    }
                 }
             }
         }
     }
+    unreachable!("Should not make it out of the loop!");
 }
 
 #[cfg(test)]
