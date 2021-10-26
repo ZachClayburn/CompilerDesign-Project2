@@ -1,4 +1,4 @@
-use log::{info, trace};
+use log::trace;
 
 use super::{
     Item, Left,
@@ -51,9 +51,9 @@ impl Table {
                 trace!("Running rule 8");
                 Some(vec![])
             }
-            (Factor, LParen(_info)) => {
+            (Factor, LParen(info)) => {
                 trace!("Running rule 9");
-                todo!("I need to figure out how to add the ) here")
+                Some(vec![Right(RParen(*info)), Left(Expr), Right(LParen(*info))])
             }
             (Factor, Number(info)) => {
                 trace!("Running rule 10");

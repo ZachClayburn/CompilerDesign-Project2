@@ -1,6 +1,7 @@
 mod table;
 
 use std::iter::Peekable;
+use std::mem::discriminant;
 
 use either::{Either, Either::Left, Either::Right};
 use log::debug;
@@ -58,27 +59,27 @@ pub fn parse(scan: Peekable<Scanner>) -> Result<()> {
     let table = Table {};
 
     'outer: for item in scan {
-        let word = item?;
+        let word = &item?;
         loop {
-            debug!("\nStack:{:?}\nWord: {:?}", stack, word);
+            debug!("\nStack:{:?}\nWord: {}", stack, word);
             match stack.last().unwrap() {
-                Right(Token::EOF) if word == Token::EOF => return Ok(()),
-                Right(terminal) if terminal == &word => {
+                Right(Token::EOF) if word == &Token::EOF => return Ok(()),
+                Right(terminal) if discriminant(terminal) == discriminant(word) => {
                     stack.pop();
                     continue 'outer;
                 }
                 Right(bad_terminal) => {
                     return Err(
-                        format!("Error: Expected {:?}, but found {:?}", bad_terminal, word).into(),
+                        format!("Error: Expected {}, but found {}", bad_terminal, word).into(),
                     )
                 }
                 Left(non_terminal) => {
-                    if let Some(mut new_items) = table.at(&non_terminal, &word) {
+                    if let Some(mut new_items) = table.at(non_terminal, word) {
                         stack.pop();
                         stack.append(&mut new_items);
                     } else {
                         return Err(
-                            format!("Error expanding {:?} with {:?}", non_terminal, word).into(),
+                            format!("Error expanding {:?} with {}", non_terminal, word).into()
                         );
                     }
                 }
@@ -108,7 +109,42 @@ mod test {
     #[test]
     fn single_number_does_not_error() {
         let scan = Scanner::from_text("1");
-        let out = parse(scan);
-        assert!(out.is_ok());
+        assert!(parse(scan).is_ok());
+    }
+
+    #[test]
+    fn single_operation_does_not_error() {
+        let scan = Scanner::from_text("1+1");
+        assert!(parse(scan).is_ok());
+    }
+
+    #[test]
+    fn operation_chain_does_not_error() {
+        let scan = Scanner::from_text("Hello + world * 3");
+        assert!(parse(scan).is_ok());
+    }
+
+    #[test]
+    fn parenthetical_number_does_not_error() {
+        let scan = Scanner::from_text("(1)");
+        assert!(parse(scan).is_ok());
+    }
+
+    #[test]
+    fn operation_chain_with_parenthasese_does_not_error() {
+        let scan = Scanner::from_text("1+(1-1)*1");
+        assert!(parse(scan).is_ok())
+    }
+
+    #[test]
+    fn sequential_numbers_error() {
+        let scan = Scanner::from_text("1 1");
+        assert!(parse(scan).is_err());
+    }
+
+    #[test]
+    fn trailing_operator_errors() {
+        let scan = Scanner::from_text("1 + 1 -");
+        assert!(parse(scan).is_err());
     }
 }
