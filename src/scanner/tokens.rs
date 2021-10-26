@@ -58,6 +58,7 @@ pub enum Token {
     Dot(Location),
     DoubleDot(Location),
     Comma(Location),
+    EOF,
 }
 
 impl Display for Token {
@@ -120,6 +121,7 @@ impl Display for Token {
             Token::Dot(_) => write!(f, "Dot"),
             Token::DoubleDot(_) => write!(f, "DoubleDot"),
             Token::Comma(_) => write!(f, "Comma"),
+            Token::EOF => write!(f, "EOF"),
         }
     }
 }
@@ -184,6 +186,7 @@ impl Token {
             | Token::Dot(loc)
             | Token::DoubleDot(loc)
             | Token::Comma(loc) => format!("{}:{}", loc.line, loc.column),
+            Token::EOF => format!("EOF"),
         }
     }
 }

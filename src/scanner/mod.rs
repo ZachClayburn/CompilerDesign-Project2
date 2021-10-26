@@ -22,9 +22,15 @@ pub struct ScannerError {
 }
 
 impl Scanner {
+    fn collect_text(text: &str) -> Peekable<IntoIter<char>> {
+        let mut vec = text.chars().collect::<Vec<_>>();
+        vec.append(&mut vec![' ', 'E', 'O', 'F']);
+        vec.into_iter().peekable()
+    }
+
     pub fn from_text(text: &str) -> Peekable<Self> {
         Self {
-            raw_text: text.chars().collect::<Vec<_>>().into_iter().peekable(),
+            raw_text: Self::collect_text(text),
             location: Location::default(),
         }
         .peekable()
@@ -209,6 +215,7 @@ impl Iterator for Scanner {
                         "num" => Ok(Token::Num(start)),
                         "string" => Ok(Token::String(start)),
                         "return" => Ok(Token::Return(start)),
+                        "EOF" if self.raw_text.peek().is_none() => Ok(Token::EOF),
                         _ => Ok(Token::Identifier(TokenInfo {
                             content,
                             start,
@@ -297,6 +304,7 @@ mod tests {
                 line: 1,
                 column: 13,
             }),
+            EOF,
         ];
         assert_eq!(tokens, expected);
     }
@@ -312,6 +320,7 @@ mod tests {
             Semicolon(Location { line: 1, column: 1 }),
             Semicolon(Location { line: 1, column: 6 }),
             Semicolon(Location { line: 2, column: 1 }),
+            EOF,
         ];
         assert_eq!(tokens, expected);
     }
@@ -346,6 +355,7 @@ mod tests {
                 line: 1,
                 column: 21,
             }),
+            EOF,
         ];
         assert_eq!(tokens, expected);
     }
@@ -359,7 +369,7 @@ mod tests {
         "};
         let scan = Scanner::from_text(comment_string);
         let tokens: Vec<Token> = scan.map(|x| x.unwrap()).collect();
-        let expected = vec![Div(Location { line: 2, column: 1 })];
+        let expected = vec![Div(Location { line: 2, column: 1 }), EOF];
         assert_eq!(tokens, expected);
     }
 
@@ -473,6 +483,7 @@ mod tests {
                 start: Location { line: 1, column: 9 },
                 stop: Location { line: 1, column: 9 },
             })),
+            Ok(EOF),
         ];
         assert_eq!(tokens, expected);
     }
@@ -512,6 +523,7 @@ mod tests {
                     column: 40,
                 },
             }),
+            EOF,
         ];
         assert_eq!(tokens, expected);
     }
@@ -595,6 +607,7 @@ mod tests {
                 line: 20,
                 column: 1,
             }),
+            EOF,
         ];
         assert_eq!(tokens, expected);
     }
