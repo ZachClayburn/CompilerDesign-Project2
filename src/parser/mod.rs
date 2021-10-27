@@ -246,4 +246,21 @@ mod test {
         );
         assert_eq!(out, expected);
     }
+
+    #[test]
+    fn operation_chain_parses_correctly() {
+        use ExpressionIr::*;
+        let scan = Scanner::from_text("Hello + world * 3");
+        let out = parse(scan).unwrap();
+        let expected = BinaryOperation(
+            Box::new(Variable("Hello".into())),
+            BinaryOperator::Plus,
+            Box::new(BinaryOperation(
+                Box::new(Variable("world".into())),
+                BinaryOperator::Multiply,
+                Box::new(NumberLiteral(3)),
+            )),
+        );
+        assert_eq!(out, expected);
+    }
 }
