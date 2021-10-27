@@ -16,6 +16,12 @@ pub struct ParseError {
     message: String,
 }
 
+impl Display for ParseError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.message)
+    }
+}
+
 impl From<&str> for ParseError {
     fn from(message: &str) -> Self {
         Self {
