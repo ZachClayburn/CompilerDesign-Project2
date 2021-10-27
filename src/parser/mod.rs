@@ -62,7 +62,10 @@ pub fn parse(scan: Peekable<Scanner>) -> Result<ExpressionIr> {
     'outer: for item in scan {
         let word = &item?;
         loop {
-            debug!("\nStack:{:?}\nValueStack:{:?}\nWord: {}", production_stack, value_stack, word);
+            debug!(
+                "\nStack:{:?}\nValueStack:{:?}\nWord: {}",
+                production_stack, value_stack, word
+            );
             match production_stack.last().unwrap() {
                 Right(Token::EOF) if word == &Token::EOF => match value_stack.len() {
                     1 => {
@@ -144,7 +147,6 @@ mod test {
         assert!(parse(scan).is_ok());
     }
 
-    #[ignore]
     #[test]
     fn operation_chain_does_not_error() {
         let scan = Scanner::from_text("Hello + world * 3");
@@ -201,6 +203,45 @@ mod test {
         let expected = BinaryOperation(
             Box::new(Variable("a".into())),
             BinaryOperator::Plus,
+            Box::new(Variable("b".into())),
+        );
+        assert_eq!(out, expected);
+    }
+
+    #[test]
+    fn single_subtraction_parses_correctly() {
+        use ExpressionIr::*;
+        let scan = Scanner::from_text("a-b");
+        let out = parse(scan).unwrap();
+        let expected = BinaryOperation(
+            Box::new(Variable("a".into())),
+            BinaryOperator::Minus,
+            Box::new(Variable("b".into())),
+        );
+        assert_eq!(out, expected);
+    }
+
+    #[test]
+    fn single_multiplication_parses_correctly() {
+        use ExpressionIr::*;
+        let scan = Scanner::from_text("a*b");
+        let out = parse(scan).unwrap();
+        let expected = BinaryOperation(
+            Box::new(Variable("a".into())),
+            BinaryOperator::Multiply,
+            Box::new(Variable("b".into())),
+        );
+        assert_eq!(out, expected);
+    }
+
+    #[test]
+    fn single_division_parses_correctly() {
+        use ExpressionIr::*;
+        let scan = Scanner::from_text("a/b");
+        let out = parse(scan).unwrap();
+        let expected = BinaryOperation(
+            Box::new(Variable("a".into())),
+            BinaryOperator::Divide,
             Box::new(Variable("b".into())),
         );
         assert_eq!(out, expected);

@@ -42,7 +42,12 @@ impl Table {
             }
             (ExprPrime, Minus(info)) => {
                 trace!("Running rule 3");
-                Some(vec![Right(Minus(*info)), Left(Term), Left(ExprPrime)])
+                Some(vec![
+                    Right(Minus(*info)),
+                    Left(Term),
+                    Left(Reduction(reduce_binary_op)),
+                    Left(ExprPrime),
+                ])
             }
             (ExprPrime, RParen(_)) | (ExprPrime, EOF) => {
                 trace!("Running rule 4");
@@ -54,11 +59,21 @@ impl Table {
             }
             (TermPrime, Star(info)) => {
                 trace!("Running rule 6");
-                Some(vec![Right(Star(*info)), Left(Factor), Left(TermPrime)])
+                Some(vec![
+                    Right(Star(*info)),
+                    Left(Factor),
+                    Left(Reduction(reduce_binary_op)),
+                    Left(TermPrime),
+                ])
             }
             (TermPrime, Div(info)) => {
                 trace!("Running rule 7");
-                Some(vec![Right(Div(*info)), Left(Factor), Left(TermPrime)])
+                Some(vec![
+                    Right(Div(*info)),
+                    Left(Factor),
+                    Left(Reduction(reduce_binary_op)),
+                    Left(TermPrime),
+                ])
             }
             (TermPrime, RParen(_))
             | (TermPrime, EOF)
