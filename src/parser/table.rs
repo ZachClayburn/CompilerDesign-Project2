@@ -1,16 +1,27 @@
 use log::trace;
 
 use super::{
-    Item, Left,
-    NonTerminal::{self, *},
-    Right,
+    Either, Left, Right,
     Token::{self, *},
 };
+use NonTerminal::*;
+
+#[derive(Debug, PartialEq, Clone)]
+pub(super) enum NonTerminal {
+    Goal,
+    Expr,
+    ExprPrime,
+    Term,
+    TermPrime,
+    Factor,
+}
+
+pub(super) type ProductionItem = Either<NonTerminal, Token>;
 
 pub struct Table {}
 
 impl Table {
-    pub(super) fn at(&self, focus: &NonTerminal, word: &Token) -> Option<Vec<Item>> {
+    pub(super) fn at(&self, focus: &NonTerminal, word: &Token) -> Option<Vec<ProductionItem>> {
         match (focus, word) {
             (Goal, LParen(_)) | (Goal, Number(_)) | (Goal, Identifier(_)) => {
                 trace!("Running rule 0");

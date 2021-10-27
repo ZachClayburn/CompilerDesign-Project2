@@ -7,17 +7,9 @@ use either::{Either, Either::Left, Either::Right};
 use log::debug;
 
 use crate::scanner::*;
-use table::Table;
+use table::{NonTerminal, ProductionItem, Table};
 
-#[derive(Debug, PartialEq, Clone)]
-enum NonTerminal {
-    Goal,
-    Expr,
-    ExprPrime,
-    Term,
-    TermPrime,
-    Factor,
-}
+pub type Result<T> = std::result::Result<T, ParseError>;
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct ParseError {
@@ -49,23 +41,20 @@ impl From<ScannerError> for ParseError {
     }
 }
 
-type Item = Either<NonTerminal, Token>;
-pub type Result<T> = std::result::Result<T, ParseError>;
-
 pub fn parse(scan: Peekable<Scanner>) -> Result<()> {
-    let mut stack: Vec<Item> = Vec::new();
-    stack.push(Right(Token::EOF));
-    stack.push(Left(NonTerminal::Goal));
+    let mut production_stack: Vec<ProductionItem> = Vec::new();
+    production_stack.push(Right(Token::EOF));
+    production_stack.push(Left(NonTerminal::Goal));
     let table = Table {};
 
     'outer: for item in scan {
         let word = &item?;
         loop {
-            debug!("\nStack:{:?}\nWord: {}", stack, word);
-            match stack.last().unwrap() {
+            debug!("\nStack:{:?}\nWord: {}", production_stack, word);
+            match production_stack.last().unwrap() {
                 Right(Token::EOF) if word == &Token::EOF => return Ok(()),
                 Right(terminal) if discriminant(terminal) == discriminant(word) => {
-                    stack.pop();
+                    production_stack.pop();
                     continue 'outer;
                 }
                 Right(bad_terminal) => {
@@ -75,8 +64,8 @@ pub fn parse(scan: Peekable<Scanner>) -> Result<()> {
                 }
                 Left(non_terminal) => {
                     if let Some(mut new_items) = table.at(non_terminal, word) {
-                        stack.pop();
-                        stack.append(&mut new_items);
+                        production_stack.pop();
+                        production_stack.append(&mut new_items);
                     } else {
                         return Err(format!(
                             "[{}] Unexpected toke {}",
