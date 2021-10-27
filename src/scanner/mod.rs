@@ -213,7 +213,7 @@ impl Iterator for Scanner {
                         "array" => Ok(Token::Array(start)),
                         "procedure" => Ok(Token::Procedure(start)),
                         "num" => Ok(Token::Num(start)),
-                        "string" => Ok(Token::String(start)),
+                        "string" => Ok(Token::StringKeyWord(start)),
                         "return" => Ok(Token::Return(start)),
                         "EOF" if self.raw_text.peek().is_none() => Ok(Token::EOF),
                         _ => Ok(Token::Identifier(TokenInfo {
@@ -599,7 +599,7 @@ mod tests {
                 line: 18,
                 column: 1,
             }),
-            String(Location {
+            StringKeyWord(Location {
                 line: 19,
                 column: 1,
             }),

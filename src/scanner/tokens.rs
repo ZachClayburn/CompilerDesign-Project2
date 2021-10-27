@@ -33,7 +33,7 @@ pub enum Token {
     Array(Location),
     Procedure(Location),
     Num(Location),
-    String(Location),
+    StringKeyWord(Location),
     Return(Location),
     // Symbols
     LParen(Location),
@@ -97,7 +97,7 @@ impl Display for Token {
             Token::Array(_) => write!(f, "Array"),
             Token::Procedure(_) => write!(f, "Procedure"),
             Token::Num(_) => write!(f, "Num"),
-            Token::String(_) => write!(f, "String"),
+            Token::StringKeyWord(_) => write!(f, "String"),
             Token::Return(_) => write!(f, "Return"),
             Token::LParen(_) => write!(f, "LParen"),
             Token::RParen(_) => write!(f, "RParen"),
@@ -162,7 +162,7 @@ impl Token {
             | Token::Array(loc)
             | Token::Procedure(loc)
             | Token::Num(loc)
-            | Token::String(loc)
+            | Token::StringKeyWord(loc)
             | Token::Return(loc)
             | Token::LParen(loc)
             | Token::RParen(loc)
@@ -186,7 +186,7 @@ impl Token {
             | Token::Dot(loc)
             | Token::DoubleDot(loc)
             | Token::Comma(loc) => format!("{}:{}", loc.line, loc.column),
-            Token::EOF => format!("EOF"),
+            Token::EOF => format!(""),
         }
     }
 }
