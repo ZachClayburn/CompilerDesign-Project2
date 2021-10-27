@@ -1,13 +1,14 @@
+mod ast;
 mod table;
 
-use std::iter::Peekable;
-use std::mem::discriminant;
-
-use either::{Either, Either::Left, Either::Right};
-use log::debug;
-
 use crate::scanner::*;
-use table::{NonTerminal, ProductionItem, Table};
+use ast::{ExpressionIr, ValueItem};
+use either::Either::{self, Left, Right};
+use log::debug;
+use std::fmt::Display;
+use std::num::ParseIntError;
+use std::{iter::Peekable, mem::discriminant};
+use table::{NonTerminal, Table};
 
 pub type Result<T> = std::result::Result<T, ParseError>;
 
@@ -47,10 +48,15 @@ impl From<ScannerError> for ParseError {
     }
 }
 
-pub fn parse(scan: Peekable<Scanner>) -> Result<()> {
-    let mut production_stack: Vec<ProductionItem> = Vec::new();
-    production_stack.push(Right(Token::EOF));
-    production_stack.push(Left(NonTerminal::Goal));
+impl From<ParseIntError> for ParseError {
+    fn from(_: ParseIntError) -> Self {
+        todo!()
+    }
+}
+
+pub fn parse(scan: Peekable<Scanner>) -> Result<ExpressionIr> {
+    let mut production_stack = vec![Right(Token::EOF), Left(NonTerminal::Goal)];
+    let mut value_stack: Vec<ValueItem> = Vec::new();
     let table = Table {};
 
     'outer: for item in scan {
@@ -58,9 +64,25 @@ pub fn parse(scan: Peekable<Scanner>) -> Result<()> {
         loop {
             debug!("\nStack:{:?}\nWord: {}", production_stack, word);
             match production_stack.last().unwrap() {
-                Right(Token::EOF) if word == &Token::EOF => return Ok(()),
+                Right(Token::EOF) if word == &Token::EOF => match value_stack.len() {
+                    1 => {
+                        if let Left(final_value) = value_stack.pop().unwrap() {
+                            return Ok(final_value);
+                        } else {
+                            return Err("Error extracting final value".into());
+                        }
+                    }
+                    x => {
+                        return Err(format!(
+                            "Expected a single value left in the value stack, but found {}",
+                            x
+                        )
+                        .into())
+                    }
+                },
                 Right(terminal) if discriminant(terminal) == discriminant(word) => {
-                    production_stack.pop();
+                    let token = production_stack.pop().unwrap().unwrap_right();
+                    value_stack.push(Right(token));
                     continue 'outer;
                 }
                 Right(bad_terminal) => {
@@ -69,7 +91,10 @@ pub fn parse(scan: Peekable<Scanner>) -> Result<()> {
                     )
                 }
                 Left(non_terminal) => {
-                    if let Some(mut new_items) = table.at(non_terminal, word) {
+                    if let &NonTerminal::Reduction(op) = non_terminal {
+                        value_stack = op(value_stack)?;
+                        production_stack.pop();
+                    } else if let Some(mut new_items) = table.at(non_terminal, word) {
                         production_stack.pop();
                         production_stack.append(&mut new_items);
                     } else {
@@ -91,6 +116,7 @@ pub fn parse(scan: Peekable<Scanner>) -> Result<()> {
 mod test {
     use super::*;
     use pretty_assertions::assert_eq;
+    use ast::*;
 
     #[test]
     fn parse_errors_on_bad_first_character() {
@@ -144,5 +170,21 @@ mod test {
     fn trailing_operator_errors() {
         let scan = Scanner::from_text("1 + 1 -");
         assert!(parse(scan).is_err());
+    }
+
+    #[test]
+    fn single_number_parses_correctly() {
+        let scan = Scanner::from_text("1");
+        let out = parse(scan).unwrap();
+        let expected = ExpressionIr::NumberLiteral(1);
+        assert_eq!(out, expected);
+    }
+
+    #[test]
+    fn single_variable_parses_correctly() {
+        let scan = Scanner::from_text("a");
+        let out = parse(scan).unwrap();
+        let expected = ExpressionIr::Variable("a".into());
+        assert_eq!(out, expected);
     }
 }

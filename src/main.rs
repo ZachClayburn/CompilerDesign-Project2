@@ -36,7 +36,7 @@ fn main() {
 
     let scan = Scanner::from_text(exp);
     match parse(scan) {
-        Ok(_) => todo!(),
+        Ok(result) => println!("{}", result),
         Err(error) => {
             eprintln!("{}", error);
             std::process::exit(1);

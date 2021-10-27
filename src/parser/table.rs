@@ -1,10 +1,7 @@
 use log::trace;
 
-use super::{
-    Either, Left, Right,
-    Token::{self, *},
-};
-use NonTerminal::*;
+use super::{ast, Either, Left, Right, Token};
+use ast::{reduce_value, ReductionOp};
 
 #[derive(Debug, PartialEq, Clone)]
 pub(super) enum NonTerminal {
@@ -14,6 +11,7 @@ pub(super) enum NonTerminal {
     Term,
     TermPrime,
     Factor,
+    Reduction(ReductionOp),
 }
 
 pub(super) type ProductionItem = Either<NonTerminal, Token>;
@@ -22,6 +20,8 @@ pub struct Table {}
 
 impl Table {
     pub(super) fn at(&self, focus: &NonTerminal, word: &Token) -> Option<Vec<ProductionItem>> {
+        use NonTerminal::*;
+        use Token::*;
         match (focus, word) {
             (Goal, LParen(_)) | (Goal, Number(_)) | (Goal, Identifier(_)) => {
                 trace!("Running rule 0");
@@ -68,11 +68,17 @@ impl Table {
             }
             (Factor, Number(info)) => {
                 trace!("Running rule 10");
-                Some(vec![Right(Number(info.clone()))])
+                Some(vec![
+                    Left(Reduction(reduce_value)),
+                    Right(Number(info.clone())),
+                ])
             }
             (Factor, Identifier(info)) => {
                 trace!("Running rule 11");
-                Some(vec![Right(Identifier(info.clone()))])
+                Some(vec![
+                    Left(Reduction(reduce_value)),
+                    Right(Identifier(info.clone())),
+                ])
             }
             (_, _) => None,
         }
