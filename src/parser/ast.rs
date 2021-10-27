@@ -63,3 +63,36 @@ pub fn reduce_value(mut stack: Vec<ValueItem>) -> Result<Vec<ValueItem>> {
         None => Err("Attempting to reduce a value, but the stack is empty!".into()),
     }
 }
+
+pub fn reduce_binary_op(mut stack: Vec<ValueItem>) -> Result<Vec<ValueItem>> {
+    use super::Token::*;
+    match &stack[..] {
+        [] | [_] | [_, _] => {
+            return Err("Insufficient values to reduce binary operation".into());
+        }
+        [.., Left(_), Right(Plus(_) | Minus(_) | Star(_) | Div(_)), Left(_)] => (),
+        [.., wrong1, wrong2, wrong3] => {
+            return Err(format!(
+                "Incorrect types for binary operation reduction: {}, {}, {}",
+                wrong1, wrong2, wrong3
+            )
+            .into());
+        }
+    };
+    let rhs = stack.pop().unwrap().unwrap_left();
+    let op = match stack.pop().unwrap().unwrap_right() {
+        Plus(_) => BinaryOperator::Plus,
+        Minus(_) => BinaryOperator::Minus,
+        Star(_) => BinaryOperator::Multiply,
+        Div(_) => BinaryOperator::Divide,
+        bad => unreachable!("sould not be able to have {} as the operator", bad),
+    };
+    let lhs = stack.pop().unwrap().unwrap_left();
+
+    stack.push(Left(ExpressionIr::BinaryOperation(
+        Box::new(lhs),
+        op,
+        Box::new(rhs),
+    )));
+    Ok(stack)
+}

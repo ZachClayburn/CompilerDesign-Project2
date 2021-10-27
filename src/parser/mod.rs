@@ -62,7 +62,7 @@ pub fn parse(scan: Peekable<Scanner>) -> Result<ExpressionIr> {
     'outer: for item in scan {
         let word = &item?;
         loop {
-            debug!("\nStack:{:?}\nWord: {}", production_stack, word);
+            debug!("\nStack:{:?}\nValueStack:{:?}\nWord: {}", production_stack, value_stack, word);
             match production_stack.last().unwrap() {
                 Right(Token::EOF) if word == &Token::EOF => match value_stack.len() {
                     1 => {
@@ -115,8 +115,8 @@ pub fn parse(scan: Peekable<Scanner>) -> Result<ExpressionIr> {
 #[cfg(test)]
 mod test {
     use super::*;
-    use pretty_assertions::assert_eq;
     use ast::*;
+    use pretty_assertions::assert_eq;
 
     #[test]
     fn parse_errors_on_bad_first_character() {
@@ -185,6 +185,19 @@ mod test {
         let scan = Scanner::from_text("a");
         let out = parse(scan).unwrap();
         let expected = ExpressionIr::Variable("a".into());
+        assert_eq!(out, expected);
+    }
+
+    #[test]
+    fn single_addition_parses_correctly() {
+        use ExpressionIr::*;
+        let scan = Scanner::from_text("a+b");
+        let out = parse(scan).unwrap();
+        let expected = BinaryOperation(
+            Box::new(Variable("a".into())),
+            BinaryOperator::Plus,
+            Box::new(Variable("b".into())),
+        );
         assert_eq!(out, expected);
     }
 }

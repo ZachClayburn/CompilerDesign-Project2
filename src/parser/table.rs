@@ -1,7 +1,7 @@
 use log::trace;
 
 use super::{ast, Either, Left, Right, Token};
-use ast::{reduce_value, ReductionOp};
+use ast::{reduce_binary_op, reduce_value, ReductionOp};
 
 #[derive(Debug, PartialEq, Clone)]
 pub(super) enum NonTerminal {
@@ -33,7 +33,12 @@ impl Table {
             }
             (ExprPrime, Plus(info)) => {
                 trace!("Running rule 2");
-                Some(vec![Left(ExprPrime), Left(Term), Right(Plus(*info))])
+                Some(vec![
+                    Left(ExprPrime),
+                    Left(Reduction(reduce_binary_op)),
+                    Left(Term),
+                    Right(Plus(*info)),
+                ])
             }
             (ExprPrime, Minus(info)) => {
                 trace!("Running rule 3");
