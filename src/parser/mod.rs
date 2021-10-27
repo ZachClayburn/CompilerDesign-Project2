@@ -78,9 +78,12 @@ pub fn parse(scan: Peekable<Scanner>) -> Result<()> {
                         stack.pop();
                         stack.append(&mut new_items);
                     } else {
-                        return Err(
-                            format!("Error expanding {:?} with {}", non_terminal, word).into()
-                        );
+                        return Err(format!(
+                            "[{}] Unexpected toke {}",
+                            word.format_location(),
+                            word
+                        )
+                        .into());
                     }
                 }
             }
