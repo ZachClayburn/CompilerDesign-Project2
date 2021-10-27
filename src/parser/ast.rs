@@ -89,11 +89,18 @@ pub fn reduce_binary_op(mut stack: Vec<ValueItem>) -> Result<Vec<ValueItem>> {
     };
     let lhs = stack.pop().unwrap().unwrap_left();
 
-    stack.push(Left(ExpressionIr::BinaryOperation(
-        Box::new(lhs),
-        op,
-        Box::new(rhs),
-    )));
+    let expr = match (lhs, rhs) {
+        (ExpressionIr::NumberLiteral(lhs), ExpressionIr::NumberLiteral(rhs)) => {
+            ExpressionIr::NumberLiteral(match op {
+                BinaryOperator::Plus => lhs + rhs,
+                BinaryOperator::Minus => lhs - rhs,
+                BinaryOperator::Multiply => lhs * rhs,
+                BinaryOperator::Divide => lhs / rhs,
+            })
+        }
+        (lhs, rhs) => ExpressionIr::BinaryOperation(Box::new(lhs), op, Box::new(rhs)),
+    };
+    stack.push(Left(expr));
     Ok(stack)
 }
 

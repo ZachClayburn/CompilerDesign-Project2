@@ -149,7 +149,7 @@ mod test {
 
     #[test]
     fn operation_chain_does_not_error() {
-        let scan = Scanner::from_text("Hello + world * 3");
+        let scan = Scanner::from_text("a*b-c+d");
         assert!(parse(scan).is_ok());
     }
 
@@ -248,16 +248,20 @@ mod test {
     #[test]
     fn operation_chain_parses_correctly() {
         use ExpressionIr::*;
-        let scan = Scanner::from_text("Hello + world * 3");
+        let scan = Scanner::from_text("a*b-c+d");
         let out = parse(scan).unwrap();
         let expected = BinaryOperation(
-            Box::new(Variable("Hello".into())),
-            BinaryOperator::Plus,
             Box::new(BinaryOperation(
-                Box::new(Variable("world".into())),
-                BinaryOperator::Multiply,
-                Box::new(NumberLiteral(3)),
+                Box::new(BinaryOperation(
+                        Box::new(Variable("a".into())),
+                        BinaryOperator::Multiply,
+                        Box::new(Variable("b".into())),
+                        )),
+                BinaryOperator::Minus,
+                Box::new(Variable("c".into())),
             )),
+            BinaryOperator::Plus,
+            Box::new(Variable("d".into())),
         );
         assert_eq!(out, expected);
     }
@@ -268,6 +272,14 @@ mod test {
         let scan = Scanner::from_text("(a)");
         let out = parse(scan).unwrap();
         let expected = Variable("a".into());
+        assert_eq!(out, expected);
+    }
+
+    #[test]
+    fn literal_expressions_can_collapse() {
+        let scan = Scanner::from_text("2*3-4+5");
+        let out = parse(scan).unwrap();
+        let expected = ExpressionIr::NumberLiteral(7);
         assert_eq!(out, expected);
     }
 }
