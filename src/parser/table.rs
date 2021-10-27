@@ -29,20 +29,20 @@ impl Table {
             }
             (Expr, LParen(_)) | (Expr, Number(_)) | (Expr, Identifier(_)) => {
                 trace!("Running rule 1");
-                Some(vec![Left(ExprPrime), Left(Term)])
+                Some(vec![Left(Term), Left(ExprPrime)])
             }
             (ExprPrime, Plus(info)) => {
                 trace!("Running rule 2");
                 Some(vec![
-                    Left(ExprPrime),
-                    Left(Reduction(reduce_binary_op)),
-                    Left(Term),
                     Right(Plus(*info)),
+                    Left(Term),
+                    Left(Reduction(reduce_binary_op)),
+                    Left(ExprPrime),
                 ])
             }
             (ExprPrime, Minus(info)) => {
                 trace!("Running rule 3");
-                Some(vec![Left(ExprPrime), Left(Term), Right(Minus(*info))])
+                Some(vec![Right(Minus(*info)), Left(Term), Left(ExprPrime)])
             }
             (ExprPrime, RParen(_)) | (ExprPrime, EOF) => {
                 trace!("Running rule 4");
@@ -50,15 +50,15 @@ impl Table {
             }
             (Term, LParen(_)) | (Term, Number(_)) | (Term, Identifier(_)) => {
                 trace!("Running rule 5");
-                Some(vec![Left(TermPrime), Left(Factor)])
+                Some(vec![Left(Factor), Left(TermPrime)])
             }
             (TermPrime, Star(info)) => {
                 trace!("Running rule 6");
-                Some(vec![Left(TermPrime), Left(Factor), Right(Star(*info))])
+                Some(vec![Right(Star(*info)), Left(Factor), Left(TermPrime)])
             }
             (TermPrime, Div(info)) => {
                 trace!("Running rule 7");
-                Some(vec![Left(TermPrime), Left(Factor), Right(Div(*info))])
+                Some(vec![Right(Div(*info)), Left(Factor), Left(TermPrime)])
             }
             (TermPrime, RParen(_))
             | (TermPrime, EOF)
@@ -69,20 +69,20 @@ impl Table {
             }
             (Factor, LParen(info)) => {
                 trace!("Running rule 9");
-                Some(vec![Right(RParen(*info)), Left(Expr), Right(LParen(*info))])
+                Some(vec![Right(LParen(*info)), Left(Expr), Right(RParen(*info))])
             }
             (Factor, Number(info)) => {
                 trace!("Running rule 10");
                 Some(vec![
-                    Left(Reduction(reduce_value)),
                     Right(Number(info.clone())),
+                    Left(Reduction(reduce_value)),
                 ])
             }
             (Factor, Identifier(info)) => {
                 trace!("Running rule 11");
                 Some(vec![
-                    Left(Reduction(reduce_value)),
                     Right(Identifier(info.clone())),
+                    Left(Reduction(reduce_value)),
                 ])
             }
             (_, _) => None,
