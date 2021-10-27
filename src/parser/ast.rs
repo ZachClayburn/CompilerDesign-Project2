@@ -96,3 +96,24 @@ pub fn reduce_binary_op(mut stack: Vec<ValueItem>) -> Result<Vec<ValueItem>> {
     )));
     Ok(stack)
 }
+
+pub fn reduce_parenthetical(mut stack: Vec<ValueItem>) -> Result<Vec<ValueItem>> {
+    match stack.pop() {
+        Some(Right(Token::RParen(_))) => (),
+        Some(bad) => return Err(format!("Expected ), found {}", bad).into()),
+        None => return Err("Missing ) while trying to reduce parenthetical".into()),
+    };
+    let expr = match stack.pop() {
+        Some(Left(expr)) => expr,
+        Some(bad) => return Err(format!("Expected expression, found {}", bad).into()),
+        None => return Err("Missing expression while trying to reduce parenthetical".into()),
+    };
+    match stack.pop() {
+        Some(Right(Token::LParen(_))) => (),
+        Some(bad) => return Err(format!("Expected (, found {}", bad).into()),
+        None => return Err("Missing ( while trying to reduce parenthetical".into()),
+    };
+
+    stack.push(Left(expr));
+    Ok(stack)
+}

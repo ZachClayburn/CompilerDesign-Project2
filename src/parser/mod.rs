@@ -153,14 +153,12 @@ mod test {
         assert!(parse(scan).is_ok());
     }
 
-    #[ignore]
     #[test]
     fn parenthetical_number_does_not_error() {
         let scan = Scanner::from_text("(1)");
         assert!(parse(scan).is_ok());
     }
 
-    #[ignore]
     #[test]
     fn operation_chain_with_parenthasese_does_not_error() {
         let scan = Scanner::from_text("1+(1-1)*1");
@@ -261,6 +259,15 @@ mod test {
                 Box::new(NumberLiteral(3)),
             )),
         );
+        assert_eq!(out, expected);
+    }
+
+    #[test]
+    fn parenthetical_variable_parses_correctly() {
+        use ExpressionIr::*;
+        let scan = Scanner::from_text("(a)");
+        let out = parse(scan).unwrap();
+        let expected = Variable("a".into());
         assert_eq!(out, expected);
     }
 }
