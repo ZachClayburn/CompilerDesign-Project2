@@ -6,6 +6,7 @@ use parser::parse;
 use scanner::Scanner;
 use simple_logger::SimpleLogger;
 
+#[cfg(not(tarpaulin_include))]
 fn main() {
     let matches = App::new(env!("CARGO_BIN_NAME"))
         .version("1.0")

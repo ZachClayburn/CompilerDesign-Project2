@@ -99,28 +99,28 @@ impl Display for Token {
             Token::Num(_) => write!(f, "Num"),
             Token::StringKeyWord(_) => write!(f, "String"),
             Token::Return(_) => write!(f, "Return"),
-            Token::LParen(_) => write!(f, "LParen"),
-            Token::RParen(_) => write!(f, "RParen"),
-            Token::LBracket(_) => write!(f, "LBracket"),
-            Token::RBracket(_) => write!(f, "RBracket"),
-            Token::LBrace(_) => write!(f, "LBrace"),
-            Token::RBrace(_) => write!(f, "RBrace"),
-            Token::Semicolon(_) => write!(f, "Semicolon"),
-            Token::Assign(_) => write!(f, "Assign"),
-            Token::Plus(_) => write!(f, "Plus"),
-            Token::Minus(_) => write!(f, "Minus"),
-            Token::Star(_) => write!(f, "Star"),
-            Token::Div(_) => write!(f, "Div"),
-            Token::Pow(_) => write!(f, "Pow"),
-            Token::Less(_) => write!(f, "Less"),
-            Token::Greater(_) => write!(f, "Greater"),
-            Token::LessEqual(_) => write!(f, "LessEqual"),
-            Token::GreaterEqual(_) => write!(f, "GreaterEqual"),
-            Token::Equal(_) => write!(f, "Equal"),
-            Token::NotEqual(_) => write!(f, "NotEqual"),
-            Token::Dot(_) => write!(f, "Dot"),
-            Token::DoubleDot(_) => write!(f, "DoubleDot"),
-            Token::Comma(_) => write!(f, "Comma"),
+            Token::LParen(_) => write!(f, "("),
+            Token::RParen(_) => write!(f, ")"),
+            Token::LBracket(_) => write!(f, "["),
+            Token::RBracket(_) => write!(f, "]"),
+            Token::LBrace(_) => write!(f, "{}", "{"),
+            Token::RBrace(_) => write!(f, "{}", "}"),
+            Token::Semicolon(_) => write!(f, ";"),
+            Token::Assign(_) => write!(f, "="),
+            Token::Plus(_) => write!(f, "+"),
+            Token::Minus(_) => write!(f, "-"),
+            Token::Star(_) => write!(f, "*"),
+            Token::Div(_) => write!(f, "/"),
+            Token::Pow(_) => write!(f, "^"),
+            Token::Less(_) => write!(f, "<"),
+            Token::Greater(_) => write!(f, ">"),
+            Token::LessEqual(_) => write!(f, "<="),
+            Token::GreaterEqual(_) => write!(f, ">="),
+            Token::Equal(_) => write!(f, "=="),
+            Token::NotEqual(_) => write!(f, "!="),
+            Token::Dot(_) => write!(f, "."),
+            Token::DoubleDot(_) => write!(f, ".."),
+            Token::Comma(_) => write!(f, ","),
             Token::EOF => write!(f, "EOF"),
         }
     }
@@ -186,7 +186,72 @@ impl Token {
             | Token::Dot(loc)
             | Token::DoubleDot(loc)
             | Token::Comma(loc) => format!("{}:{}", loc.line, loc.column),
-            Token::EOF => format!(""),
+            Token::EOF => format!("EOF"),
         }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use crate::scanner::Scanner;
+    use pretty_assertions::assert_eq;
+
+    #[test]
+    fn tokens_format_correctly() {
+        let scan = Scanner::from_text(
+            "
+            program begin end switch case default write read for to step do if then else array
+            procedure num string return ()[]{};=+-*/^<><=>===. ..,
+            ",
+        );
+        let formatted = scan
+            .map(|x| x.unwrap())
+            .map(|x| format!("{}", x))
+            .collect::<Vec<_>>();
+        let expected = vec![
+            "Program",
+            "Begin",
+            "End",
+            "Switch",
+            "Case",
+            "Default",
+            "Write",
+            "Read",
+            "For",
+            "To",
+            "Step",
+            "Do",
+            "If",
+            "Then",
+            "Else",
+            "Array",
+            "Procedure",
+            "Num",
+            "String",
+            "Return",
+            "(",
+            ")",
+            "[",
+            "]",
+            "{",
+            "}",
+            ";",
+            "=",
+            "+",
+            "-",
+            "*",
+            "/",
+            "^",
+            "<",
+            ">",
+            "<=",
+            ">=",
+            "==",
+            ".",
+            "..",
+            ",",
+            "EOF",
+        ];
+        assert_eq!(formatted, expected);
     }
 }
