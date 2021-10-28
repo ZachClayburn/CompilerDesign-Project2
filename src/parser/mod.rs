@@ -49,8 +49,8 @@ impl From<ScannerError> for ParseError {
 }
 
 impl From<ParseIntError> for ParseError {
-    fn from(_: ParseIntError) -> Self {
-        todo!()
+    fn from(err: ParseIntError) -> Self {
+        err.to_string().into()
     }
 }
 
@@ -280,6 +280,20 @@ mod test {
         let scan = Scanner::from_text("2*3-4+5");
         let out = parse(scan).unwrap();
         let expected = ExpressionIr::NumberLiteral(7);
+        assert_eq!(out, expected);
+    }
+
+    #[test]
+    fn fails_when_number_is_too_large() {
+        let scan = Scanner::from_text(format!("{}", (i32::MAX as i64) + 1).as_str());
+        assert!(parse(scan).is_err());
+    }
+
+    #[test]
+    fn expressions_format_correctly() {
+        let scan = Scanner::from_text("a*b+c/d-(e)");
+        let out = format!("{}", parse(scan).unwrap());
+        let expected = "(((a * b) + (c / d)) - e)";
         assert_eq!(out, expected);
     }
 }

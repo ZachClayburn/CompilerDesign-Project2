@@ -194,15 +194,18 @@ impl Token {
 #[cfg(test)]
 mod test {
     use crate::scanner::Scanner;
+    use indoc::indoc;
     use pretty_assertions::assert_eq;
 
     #[test]
     fn tokens_format_correctly() {
         let scan = Scanner::from_text(
-            "
+            r#"
             program begin end switch case default write read for to step do if then else array
-            procedure num string return ()[]{};=+-*/^<><=>===. ..,
-            ",
+            procedure num string return ()[]{};=+-*/^<><=>===.!=..,
+            identifier 1234
+            "String"
+            "#,
         );
         let formatted = scan
             .map(|x| x.unwrap())
@@ -248,10 +251,29 @@ mod test {
             ">=",
             "==",
             ".",
+            "!=",
             "..",
             ",",
+            "Identifier: identifier",
+            "Number: 1234",
+            "StringLiteral: String",
             "EOF",
         ];
+        assert_eq!(formatted, expected);
+    }
+
+    #[test]
+    fn token_location_formats_correctly() {
+        let scan = Scanner::from_text(indoc! {r#"
+            .   .
+            . . .
+                hello 1234
+             "hi"
+        "#});
+        let formatted = scan
+            .map(|x| x.unwrap().format_location())
+            .collect::<Vec<_>>();
+        let expected = vec!["1:1", "1:5", "2:1", "2:3", "2:5", "3:5", "3:11", "4:2", "EOF"];
         assert_eq!(formatted, expected);
     }
 }

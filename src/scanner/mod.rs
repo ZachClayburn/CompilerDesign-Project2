@@ -36,6 +36,7 @@ impl Scanner {
         .peekable()
     }
 
+    #[allow(dead_code)]
     pub fn from_file(file_path: &str) -> io::Result<Peekable<Self>> {
         Ok(Self::from_text(&fs::read_to_string(file_path)?))
     }
@@ -253,7 +254,7 @@ mod tests {
 
     #[test]
     fn can_create_scanner_from_text() {
-        Scanner::from_text("Here is some text!");
+        let _ = Scanner::from_text("Here is some text!");
     }
 
     #[test]
