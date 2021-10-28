@@ -1,8 +1,8 @@
 mod parser;
 mod scanner;
 
-use colored::*;
 use clap::{App, Arg, ArgGroup};
+use colored::*;
 use parser::parse;
 use scanner::Scanner;
 use simple_logger::SimpleLogger;
@@ -74,5 +74,45 @@ fn main() {
                 Err(err) => println!(" {} {}", "invalid".red(), err),
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use pretty_assertions::assert_eq;
+
+    fn get_test_dir() -> std::path::PathBuf {
+        [env!("CARGO_MANIFEST_DIR"), "resources", "test"]
+            .iter()
+            .collect()
+    }
+
+    #[test]
+    fn valid_examples_are_all_valid() {
+        let mut d = get_test_dir();
+        d.push("ll1valid-1");
+        d.set_extension("txt");
+        let test_file_contents = std::fs::read_to_string(d).unwrap();
+        let bad_lines = test_file_contents
+            .lines()
+            .filter(|x| parse(Scanner::from_text(x)).is_err())
+            .collect::<Vec<_>>();
+        let expected: Vec<&str> = vec![];
+        assert_eq!(bad_lines, expected);
+    }
+
+    #[test]
+    fn invalid_examples_are_all_invalid() {
+        let mut d = get_test_dir();
+        d.push("ll1invalid-1");
+        d.set_extension("txt");
+        let test_file_contents = std::fs::read_to_string(d).unwrap();
+        let bad_lines = test_file_contents
+            .lines()
+            .filter(|x| parse(Scanner::from_text(x)).is_ok())
+            .collect::<Vec<_>>();
+        let expected: Vec<&str> = vec![];
+        assert_eq!(bad_lines, expected);
     }
 }
