@@ -104,7 +104,7 @@ pub fn parse(scan: Peekable<Scanner>) -> Result<ExpressionIr> {
                         }
                     } else {
                         return Err(format!(
-                            "[{}] Unexpected toke {}",
+                            "[{}] Unexpected token {}",
                             word.format_location(),
                             word
                         )
