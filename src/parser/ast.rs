@@ -66,6 +66,7 @@ pub fn reduce_value(mut stack: Vec<ValueItem>) -> Result<Vec<ValueItem>> {
 
 pub fn reduce_binary_op(mut stack: Vec<ValueItem>) -> Result<Vec<ValueItem>> {
     use super::Token::*;
+    use ExpressionIr::*;
     match &stack[..] {
         [] | [_] | [_, _] => {
             return Err("Insufficient values to reduce binary operation".into());
@@ -90,15 +91,18 @@ pub fn reduce_binary_op(mut stack: Vec<ValueItem>) -> Result<Vec<ValueItem>> {
     let lhs = stack.pop().unwrap().unwrap_left();
 
     let expr = match (lhs, rhs) {
-        (ExpressionIr::NumberLiteral(lhs), ExpressionIr::NumberLiteral(rhs)) => {
-            ExpressionIr::NumberLiteral(match op {
-                BinaryOperator::Plus => lhs + rhs,
-                BinaryOperator::Minus => lhs - rhs,
-                BinaryOperator::Multiply => lhs * rhs,
-                BinaryOperator::Divide => lhs / rhs,
-            })
-        }
-        (lhs, rhs) => ExpressionIr::BinaryOperation(Box::new(lhs), op, Box::new(rhs)),
+        (NumberLiteral(lhs), NumberLiteral(rhs)) => match op {
+            BinaryOperator::Plus => NumberLiteral(lhs + rhs),
+            BinaryOperator::Minus => NumberLiteral(lhs - rhs),
+            BinaryOperator::Multiply => NumberLiteral(lhs * rhs),
+            BinaryOperator::Divide if rhs != 0 => NumberLiteral(lhs / rhs),
+            op => BinaryOperation(
+                Box::new(NumberLiteral(lhs)),
+                op,
+                Box::new(NumberLiteral(rhs)),
+            ),
+        },
+        (lhs, rhs) => BinaryOperation(Box::new(lhs), op, Box::new(rhs)),
     };
     stack.push(Left(expr));
     Ok(stack)

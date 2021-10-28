@@ -296,4 +296,17 @@ mod test {
         let expected = "(((a * b) + (c / d)) - e)";
         assert_eq!(out, expected);
     }
+
+    #[test]
+    fn literal_division_by_zero_does_not_panic() {
+        use ExpressionIr::*;
+        let scan = Scanner::from_text("1/0");
+        let out = parse(scan).unwrap();
+        let expected = BinaryOperation(
+            Box::new(NumberLiteral(1)),
+            BinaryOperator::Divide,
+            Box::new(NumberLiteral(0)),
+        );
+        assert_eq!(out, expected);
+    }
 }
