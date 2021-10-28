@@ -253,10 +253,10 @@ mod test {
         let expected = BinaryOperation(
             Box::new(BinaryOperation(
                 Box::new(BinaryOperation(
-                        Box::new(Variable("a".into())),
-                        BinaryOperator::Multiply,
-                        Box::new(Variable("b".into())),
-                        )),
+                    Box::new(Variable("a".into())),
+                    BinaryOperator::Multiply,
+                    Box::new(Variable("b".into())),
+                )),
                 BinaryOperator::Minus,
                 Box::new(Variable("c".into())),
             )),
