@@ -8,6 +8,16 @@ pub struct TokenInfo {
     pub stop: Location,
 }
 
+impl Default for TokenInfo {
+    fn default() -> Self {
+        Self {
+            content: "".into(),
+            start: <_>::default(),
+            stop: <_>::default(),
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum Token {
     // Complex tokens
