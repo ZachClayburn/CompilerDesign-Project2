@@ -114,23 +114,23 @@ impl Table {
 type TokenSets<'a> = HashMap<&'a str, HashSet<&'a str>>;
 
 fn compute_first_set<'a>(
-    terminals: Vec<&'a str>,
-    non_terminals: Vec<&'a str>,
-    productions: Vec<(&'a str, Vec<&'a str>)>,
+    terminals: &Vec<&'a str>,
+    non_terminals: &Vec<&'a str>,
+    productions: &Vec<(&'a str, Vec<&'a str>)>,
 ) -> TokenSets<'a> {
     let mut first = HashMap::from([("EOF", HashSet::from(["EOF"])), ("", HashSet::from([""]))]);
 
-    for terminal in &terminals {
+    for terminal in terminals {
         first.entry(terminal).or_insert(HashSet::from([*terminal]));
     }
 
-    for non_terminal in &non_terminals {
+    for non_terminal in non_terminals {
         first.entry(non_terminal).or_insert(HashSet::new());
     }
 
     loop {
         let last_loop = first.clone();
-        for (terminal, items) in &productions {
+        for (terminal, items) in productions {
             let k = items.len() - 1;
             let mut rhs = first.get(items[0]).unwrap() - &HashSet::from([""]);
             for i in 0..(k + 1) {
@@ -157,13 +157,15 @@ fn compute_first_set<'a>(
 }
 
 fn compute_follow_set<'a>(
-    non_terminals: Vec<&'a str>,
-    productions: Vec<(&'a str, Vec<&'a str>)>,
-    first: TokenSets<'a>,
+    non_terminals: &Vec<&'a str>,
+    productions: &Vec<(&'a str, Vec<&'a str>)>,
+    first: &TokenSets<'a>,
 ) -> TokenSets<'a> {
     let mut follow = TokenSets::default();
 
-    follow.entry(non_terminals.first().unwrap()).or_insert(["EOF"].into());
+    follow
+        .entry(non_terminals.first().unwrap())
+        .or_insert(["EOF"].into());
 
     for non_terminal in non_terminals.iter().skip(1) {
         follow.entry(non_terminal).or_default();
@@ -171,7 +173,7 @@ fn compute_follow_set<'a>(
 
     loop {
         let last_loop = follow.clone();
-        for (terminal, items) in &productions {
+        for (terminal, items) in productions {
             let mut trailer = follow.get(terminal).unwrap().clone();
             for item in items.iter().rev() {
                 if non_terminals.contains(item) {
@@ -238,8 +240,11 @@ mod test {
             ("Factor", vec!["num"]),
         ];
 
-        let first =
-            token_sets_to_sorted_vectors(compute_first_set(terminals, non_terminals, productions));
+        let first = token_sets_to_sorted_vectors(compute_first_set(
+            &terminals,
+            &non_terminals,
+            &productions,
+        ));
 
         let expected = vec![
             ("", vec![""]),
@@ -283,10 +288,10 @@ mod test {
             ("Factor", vec!["num"]),
         ];
 
-        let first = compute_first_set(terminals, non_terminals.clone(), productions.clone());
+        let first = compute_first_set(&terminals, &non_terminals, &productions);
 
         let follow =
-            token_sets_to_sorted_vectors(compute_follow_set(non_terminals, productions, first));
+            token_sets_to_sorted_vectors(compute_follow_set(&non_terminals, &productions, &first));
 
         let expected = vec![
             ("Expr", sorted(vec!["EOF", ")"])),
