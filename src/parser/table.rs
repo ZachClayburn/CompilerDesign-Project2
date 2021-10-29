@@ -130,7 +130,7 @@ fn compute_first_set<'a>(
 
     loop {
         let last_loop = first.clone();
-        for (terminal, items) in productions {
+        for (non_terminal, items) in productions {
             let k = items.len() - 1;
             let mut rhs = first.get(items[0]).unwrap() - &HashSet::from([""]);
             for i in 0..(k + 1) {
@@ -146,7 +146,7 @@ fn compute_first_set<'a>(
                     rhs = &rhs | &HashSet::from([""]);
                 }
             }
-            let updated = first.entry(&terminal).or_default();
+            let updated = first.entry(&non_terminal).or_default();
             *updated = &*updated | &rhs;
         }
         if last_loop == first {
@@ -173,8 +173,8 @@ fn compute_follow_set<'a>(
 
     loop {
         let last_loop = follow.clone();
-        for (terminal, items) in productions {
-            let mut trailer = follow.get(terminal).unwrap().clone();
+        for (non_terminal, items) in productions {
+            let mut trailer = follow.get(non_terminal).unwrap().clone();
             for item in items.iter().rev() {
                 if non_terminals.contains(item) {
                     let updated = follow.entry(&item).or_default();
