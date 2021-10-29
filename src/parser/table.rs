@@ -129,38 +129,28 @@ pub fn compute_first_set<'a>(
     loop {
         let last_loop = first.clone();
         for (terminal, items) in &productions {
-            println!("{}, {:?}", terminal, items);
-            if !items.is_empty()
-                && items
-                    .iter()
-                    .all(|x| terminals.contains(x) || non_terminals.contains(x) || x == &"")
-            {
-                let k = items.len() - 1;
-                let mut rhs = first.get(items[0]).unwrap() - &HashSet::from([""]);
-                let mut i = 0;
-                loop {
-                    match first.get(items[i]) {
-                        Some(stuff) if stuff.contains("") && i + 1 <= k => {
-                            rhs = &rhs | &(first.get(items[i + 1]).unwrap() - &HashSet::from([""]));
-                            i += 1;
-                        }
-                        _ => break,
-                    }
-                }
-                println!("i = {}, k = {}", i, k);
-                if i == k && first.get(items[k]).unwrap().contains("") {
-                    println!(r#"adding "" "#);
+            let k = items.len() - 1;
+            let mut rhs = first.get(items[0]).unwrap() - &HashSet::from([""]);
+            for i in 0..(k + 1) {
+                if i + 1 <= k {
+                    rhs = &rhs
+                        | &(match first.get(items[i]) {
+                            Some(stuff) if stuff.contains("") => {
+                                first.get(items[i + 1]).unwrap() - &HashSet::from([""])
+                            }
+                            _ => break,
+                        });
+                } else if first.get(items[k]).unwrap().contains("") {
                     rhs = &rhs | &HashSet::from([""]);
                 }
-                let updated = first.entry(&terminal).or_default();
-                *updated = &*updated | &rhs;
             }
+            let updated = first.entry(&terminal).or_default();
+            *updated = &*updated | &rhs;
         }
         if last_loop == first {
             break;
         }
     }
-
     first
 }
 
