@@ -196,6 +196,47 @@ fn compute_follow_set<'a>(
     follow
 }
 
+fn compute_lookup_table(
+    terminals: &Vec<&str>,
+    non_terminals: &Vec<&str>,
+    productions: &Vec<(&str, Vec<&str>)>,
+    first: &TokenSets,
+    follow: &TokenSets,
+) -> HashMap<(usize, usize), usize> {
+    let mut lookup = HashMap::new();
+    let terminals = {
+        let mut temp = vec!["EOF"];
+        temp.append(&mut terminals.clone());
+        temp
+    };
+
+    for (productoion_num, (non_terminal, items)) in productions.iter().enumerate() {
+        let beta = items.first().unwrap();
+        let first_at_beta = first.get(beta).unwrap();
+        let first_plus = if !first_at_beta.contains("") {
+            first_at_beta.clone()
+        } else {
+            first_at_beta | follow.get(non_terminal).unwrap()
+        };
+        for terminal in first_plus.iter().filter(|x| !x.is_empty()) {
+            lookup
+                .entry((
+                    non_terminals
+                        .iter()
+                        .position(|x| x == non_terminal)
+                        .unwrap_or_else(|| panic!("Error finding non-terminal {:?}", non_terminal)),
+                    terminals
+                        .iter()
+                        .position(|x| x == terminal)
+                        .unwrap_or_else(|| panic!("Error finding terminal {:?}", terminal)),
+                ))
+                .or_insert(productoion_num);
+        }
+    }
+
+    lookup
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
@@ -302,5 +343,69 @@ mod test {
             ("Term'", sorted(vec!["EOF", ")", "+", "-"])),
         ];
         assert_eq!(follow, expected);
+    }
+
+    #[test]
+    fn can_replicate_books_lookup_table() {
+        let terminals = vec!["+", "-", "*", "/", "(", ")", "name", "num"];
+
+        let non_terminals = vec!["Goal", "Expr", "Expr'", "Term", "Term'", "Factor"];
+
+        let productions = vec![
+            ("Goal", vec!["Expr"]),
+            ("Expr", vec!["Term", "Expr'"]),
+            ("Expr'", vec!["+", "Term", "Expr'"]),
+            ("Expr'", vec!["-", "Term", "Expr'"]),
+            ("Expr'", vec![""]),
+            ("Term", vec!["Factor", "Term'"]),
+            ("Term'", vec!["*", "Factor", "Term'"]),
+            ("Term'", vec!["/", "Factor", "Term'"]),
+            ("Term'", vec![""]),
+            ("Factor", vec!["(", "Expr", ")"]),
+            ("Factor", vec!["name"]),
+            ("Factor", vec!["num"]),
+        ];
+
+        let first = compute_first_set(&terminals, &non_terminals, &productions);
+
+        let follow = compute_follow_set(&non_terminals, &productions, &first);
+
+        let lookup = {
+            let mut temp =
+                compute_lookup_table(&terminals, &non_terminals, &productions, &first, &follow)
+                    .drain()
+                    .collect::<Vec<_>>();
+            temp.sort();
+            temp.iter()
+                .map(|((a, b), c)| format!("(({}, {}), {})", a, b, c))
+                .collect::<Vec<_>>()
+        };
+
+        let expected = vec![
+            "((0, 5), 0)",
+            "((0, 7), 0)",
+            "((0, 8), 0)",
+            "((1, 5), 1)",
+            "((1, 7), 1)",
+            "((1, 8), 1)",
+            "((2, 0), 4)",
+            "((2, 1), 2)",
+            "((2, 2), 3)",
+            "((2, 6), 4)",
+            "((3, 5), 5)",
+            "((3, 7), 5)",
+            "((3, 8), 5)",
+            "((4, 0), 8)",
+            "((4, 1), 8)",
+            "((4, 2), 8)",
+            "((4, 3), 6)",
+            "((4, 4), 7)",
+            "((4, 6), 8)",
+            "((5, 5), 9)",
+            "((5, 7), 10)",
+            "((5, 8), 11)",
+        ];
+
+        assert_eq!(lookup, expected);
     }
 }
