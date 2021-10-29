@@ -111,11 +111,13 @@ impl Table {
     }
 }
 
-pub fn compute_first_set<'a>(
+type TokenSets<'a> = HashMap<&'a str, HashSet<&'a str>>;
+
+fn compute_first_set<'a>(
     terminals: Vec<&'a str>,
     non_terminals: Vec<&'a str>,
     productions: Vec<(&'a str, Vec<&'a str>)>,
-) -> HashMap<&'a str, HashSet<&'a str>> {
+) -> TokenSets<'a> {
     let mut first = HashMap::from([("EOF", HashSet::from(["EOF"])), ("", HashSet::from([""]))]);
 
     for terminal in &terminals {
@@ -159,6 +161,19 @@ mod test {
     use super::*;
     use pretty_assertions::assert_eq;
 
+    fn token_sets_to_sorted_vectors(mut sets: TokenSets) -> Vec<(&str, Vec<&str>)> {
+        let mut temp = sets
+            .drain()
+            .map(|(a, mut b)| {
+                let mut b = b.drain().collect::<Vec<_>>();
+                b.sort();
+                (a, b)
+            })
+            .collect::<Vec<_>>();
+        temp.sort_by(|(a, _), (b, _)| a.cmp(b));
+        temp
+    }
+
     #[test]
     fn can_replicate_books_first_set() {
         let terminals = vec!["+", "-", "*", "/", "(", ")", "name", "num"];
@@ -180,41 +195,27 @@ mod test {
             ("Factor", vec!["num"]),
         ];
 
-        let first = {
-            let mut temp = compute_first_set(terminals, non_terminals, productions)
-                .drain()
-                .map(|(a, mut b)| {
-                    let mut b = b.drain().collect::<Vec<_>>();
-                    b.sort();
-                    (a, b)
-                })
-                .collect::<Vec<_>>();
-            temp.sort_by(|(a, _), (b, _)| a.cmp(b));
-            temp
-        };
+        let first =
+            token_sets_to_sorted_vectors(compute_first_set(terminals, non_terminals, productions));
 
-        let expected = {
-            let mut temp = vec![
-                ("+", vec!["+"]),
-                ("-", vec!["-"]),
-                ("*", vec!["*"]),
-                ("/", vec!["/"]),
-                ("(", vec!["("]),
-                (")", vec![")"]),
-                ("name", vec!["name"]),
-                ("num", vec!["num"]),
-                ("EOF", vec!["EOF"]),
-                ("", vec![""]),
-                ("Goal", vec!["(", "name", "num"]),
-                ("Expr", vec!["(", "name", "num"]),
-                ("Expr'", vec!["", "+", "-"]),
-                ("Term", vec!["(", "name", "num"]),
-                ("Term'", vec!["", "*", "/"]),
-                ("Factor", vec!["(", "name", "num"]),
-            ];
-            temp.sort_by(|(a, _), (b, _)| a.cmp(b));
-            temp
-        };
+        let expected = vec![
+            ("", vec![""]),
+            ("(", vec!["("]),
+            (")", vec![")"]),
+            ("*", vec!["*"]),
+            ("+", vec!["+"]),
+            ("-", vec!["-"]),
+            ("/", vec!["/"]),
+            ("EOF", vec!["EOF"]),
+            ("Expr", vec!["(", "name", "num"]),
+            ("Expr'", vec!["", "+", "-"]),
+            ("Factor", vec!["(", "name", "num"]),
+            ("Goal", vec!["(", "name", "num"]),
+            ("Term", vec!["(", "name", "num"]),
+            ("Term'", vec!["", "*", "/"]),
+            ("name", vec!["name"]),
+            ("num", vec!["num"]),
+        ];
         assert_eq!(first, expected);
     }
 }
