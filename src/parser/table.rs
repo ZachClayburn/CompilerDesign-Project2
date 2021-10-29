@@ -156,6 +156,44 @@ fn compute_first_set<'a>(
     first
 }
 
+fn compute_follow_set<'a>(
+    non_terminals: Vec<&'a str>,
+    productions: Vec<(&'a str, Vec<&'a str>)>,
+    first: TokenSets<'a>,
+) -> TokenSets<'a> {
+    let mut follow = TokenSets::default();
+
+    follow.entry(non_terminals.first().unwrap()).or_insert(["EOF"].into());
+
+    for non_terminal in non_terminals.iter().skip(1) {
+        follow.entry(non_terminal).or_default();
+    }
+
+    loop {
+        let last_loop = follow.clone();
+        for (terminal, items) in &productions {
+            let mut trailer = follow.get(terminal).unwrap().clone();
+            for item in items.iter().rev() {
+                if non_terminals.contains(item) {
+                    let updated = follow.entry(&item).or_default();
+                    *updated = &*updated | &trailer;
+                    trailer = match first.get(item) {
+                        Some(set) if set.contains("") => &trailer | &(set - &HashSet::from([""])),
+                        Some(set) => set.clone(),
+                        _ => unreachable!("{} wasn't in the first sets", item),
+                    }
+                } else {
+                    trailer = first.get(item).unwrap().clone();
+                }
+            }
+        }
+        if last_loop == follow {
+            break;
+        }
+    }
+    follow
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
@@ -172,6 +210,11 @@ mod test {
             .collect::<Vec<_>>();
         temp.sort_by(|(a, _), (b, _)| a.cmp(b));
         temp
+    }
+
+    fn sorted(mut input: Vec<&str>) -> Vec<&str> {
+        input.sort();
+        input
     }
 
     #[test]
@@ -217,5 +260,42 @@ mod test {
             ("num", vec!["num"]),
         ];
         assert_eq!(first, expected);
+    }
+
+    #[test]
+    fn can_replicate_books_follow_set() {
+        let terminals = vec!["+", "-", "*", "/", "(", ")", "name", "num"];
+
+        let non_terminals = vec!["Goal", "Expr", "Expr'", "Term", "Term'", "Factor"];
+
+        let productions = vec![
+            ("Goal", vec!["Expr"]),
+            ("Expr", vec!["Term", "Expr'"]),
+            ("Expr'", vec!["+", "Term", "Expr'"]),
+            ("Expr'", vec!["-", "Term", "Expr'"]),
+            ("Expr'", vec![""]),
+            ("Term", vec!["Factor", "Term'"]),
+            ("Term'", vec!["*", "Factor", "Term'"]),
+            ("Term'", vec!["/", "Factor", "Term'"]),
+            ("Term'", vec![""]),
+            ("Factor", vec!["(", "Expr", ")"]),
+            ("Factor", vec!["name"]),
+            ("Factor", vec!["num"]),
+        ];
+
+        let first = compute_first_set(terminals, non_terminals.clone(), productions.clone());
+
+        let follow =
+            token_sets_to_sorted_vectors(compute_follow_set(non_terminals, productions, first));
+
+        let expected = vec![
+            ("Expr", sorted(vec!["EOF", ")"])),
+            ("Expr'", sorted(vec!["EOF", ")"])),
+            ("Factor", sorted(vec!["EOF", ")", "+", "-", "*", "/"])),
+            ("Goal", sorted(vec!["EOF"])),
+            ("Term", sorted(vec!["EOF", ")", "+", "-"])),
+            ("Term'", sorted(vec!["EOF", ")", "+", "-"])),
+        ];
+        assert_eq!(follow, expected);
     }
 }
