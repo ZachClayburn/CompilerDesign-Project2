@@ -57,7 +57,7 @@ impl From<ParseIntError> for ParseError {
 pub fn parse(scan: Peekable<Scanner>) -> Result<ExpressionIr> {
     let mut production_stack = vec![Right(Token::EOF), Left(NonTerminal::Goal)];
     let mut value_stack: Vec<ValueItem> = Vec::new();
-    let table = Table {};
+    let table = Table::new();
 
     'outer: for item in scan {
         let word = item?;

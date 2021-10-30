@@ -17,96 +17,154 @@ pub(super) enum NonTerminal {
 
 pub(super) type ProductionItem = Either<NonTerminal, Token>;
 
-pub struct Table {}
+pub struct Table {
+    lookup: HashMap<(usize, usize), usize>,
+}
 
 impl Table {
+    pub(super) fn new() -> Self {
+        let terminals = vec!["+", "-", "*", "/", "(", ")", "name", "num"];
+
+        let non_terminals = vec!["Goal", "Expr", "Expr'", "Term", "Term'", "Factor"];
+
+        let productions = vec![
+            ("Goal", vec!["Expr"]),
+            ("Expr", vec!["Term", "Expr'"]),
+            ("Expr'", vec!["+", "Term", "Expr'"]),
+            ("Expr'", vec!["-", "Term", "Expr'"]),
+            ("Expr'", vec![""]),
+            ("Term", vec!["Factor", "Term'"]),
+            ("Term'", vec!["*", "Factor", "Term'"]),
+            ("Term'", vec!["/", "Factor", "Term'"]),
+            ("Term'", vec![""]),
+            ("Factor", vec!["(", "Expr", ")"]),
+            ("Factor", vec!["num"]),
+            ("Factor", vec!["name"]),
+        ];
+
+        let first = compute_first_set(&terminals, &non_terminals, &productions);
+
+        let follow = compute_follow_set(&non_terminals, &productions, &first);
+
+        let lookup =
+            compute_lookup_table(&terminals, &non_terminals, &productions, &first, &follow);
+        Self { lookup }
+    }
+
+    fn get_focus_number(&self, non_terminal: &NonTerminal) -> Option<usize> {
+        match non_terminal {
+            NonTerminal::Goal => Some(0),
+            NonTerminal::Expr => Some(1),
+            NonTerminal::ExprPrime => Some(2),
+            NonTerminal::Term => Some(3),
+            NonTerminal::TermPrime => Some(4),
+            NonTerminal::Factor => Some(5),
+            NonTerminal::Reduction(_) => None,
+        }
+    }
+
+    fn get_word_number(&self, terminal: &Token) -> Option<usize> {
+        match terminal {
+            Token::EOF => Some(0),
+            Token::Plus(_) => Some(1),
+            Token::Minus(_) => Some(2),
+            Token::Star(_) => Some(3),
+            Token::Div(_) => Some(4),
+            Token::LParen(_) => Some(5),
+            Token::RParen(_) => Some(6),
+            Token::Identifier(_) => Some(7),
+            Token::Number(_) => Some(8),
+            _ => None,
+        }
+    }
+
     pub(super) fn at(&self, focus: &NonTerminal, word: &Token) -> Option<Vec<ProductionItem>> {
         use NonTerminal::*;
         use Token::*;
-        match (focus, word) {
-            (Goal, LParen(_)) | (Goal, Number(_)) | (Goal, Identifier(_)) => {
+        match self
+            .lookup
+            .get(&(self.get_focus_number(focus)?, self.get_word_number(word)?))?
+        {
+            0 => {
                 trace!("Running rule 0");
                 Some(vec![Left(Expr)])
             }
-            (Expr, LParen(_)) | (Expr, Number(_)) | (Expr, Identifier(_)) => {
+            1 => {
                 trace!("Running rule 1");
                 Some(vec![Left(Term), Left(ExprPrime)])
             }
-            (ExprPrime, Plus(info)) => {
+            2 => {
                 trace!("Running rule 2");
                 Some(vec![
-                    Right(Plus(*info)),
+                    Right(Plus(<_>::default())),
                     Left(Term),
                     Left(Reduction(reduce_binary_op)),
                     Left(ExprPrime),
                 ])
             }
-            (ExprPrime, Minus(info)) => {
+            3 => {
                 trace!("Running rule 3");
                 Some(vec![
-                    Right(Minus(*info)),
+                    Right(Minus(<_>::default())),
                     Left(Term),
                     Left(Reduction(reduce_binary_op)),
                     Left(ExprPrime),
                 ])
             }
-            (ExprPrime, RParen(_)) | (ExprPrime, EOF) => {
+            4 => {
                 trace!("Running rule 4");
                 Some(vec![])
             }
-            (Term, LParen(_)) | (Term, Number(_)) | (Term, Identifier(_)) => {
+            5 => {
                 trace!("Running rule 5");
                 Some(vec![Left(Factor), Left(TermPrime)])
             }
-            (TermPrime, Star(info)) => {
+            6 => {
                 trace!("Running rule 6");
                 Some(vec![
-                    Right(Star(*info)),
+                    Right(Star(<_>::default())),
                     Left(Factor),
                     Left(Reduction(reduce_binary_op)),
                     Left(TermPrime),
                 ])
             }
-            (TermPrime, Div(info)) => {
+            7 => {
                 trace!("Running rule 7");
                 Some(vec![
-                    Right(Div(*info)),
+                    Right(Div(<_>::default())),
                     Left(Factor),
                     Left(Reduction(reduce_binary_op)),
                     Left(TermPrime),
                 ])
             }
-            (TermPrime, RParen(_))
-            | (TermPrime, EOF)
-            | (TermPrime, Plus(_))
-            | (TermPrime, Minus(_)) => {
+            8 => {
                 trace!("Running rule 8");
                 Some(vec![])
             }
-            (Factor, LParen(info)) => {
+            9 => {
                 trace!("Running rule 9");
                 Some(vec![
-                    Right(LParen(*info)),
+                    Right(LParen(<_>::default())),
                     Left(Expr),
-                    Right(RParen(*info)),
+                    Right(RParen(<_>::default())),
                     Left(Reduction(reduce_parenthetical)),
                 ])
             }
-            (Factor, Number(info)) => {
+            10 => {
                 trace!("Running rule 10");
                 Some(vec![
-                    Right(Number(info.clone())),
+                    Right(Number(<_>::default())),
                     Left(Reduction(reduce_value)),
                 ])
             }
-            (Factor, Identifier(info)) => {
+            11 => {
                 trace!("Running rule 11");
                 Some(vec![
-                    Right(Identifier(info.clone())),
+                    Right(Identifier(<_>::default())),
                     Left(Reduction(reduce_value)),
                 ])
             }
-            (_, _) => None,
+            _ => None,
         }
     }
 }
