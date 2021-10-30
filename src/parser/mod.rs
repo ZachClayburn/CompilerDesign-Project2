@@ -354,4 +354,22 @@ mod test {
         let expected = FloatLiteral(12.34);
         assert_eq!(out, expected);
     }
+
+    #[test]
+    fn floating_point_numbers_can_collapse() {
+        use ExpressionIr::*;
+        let scan = Scanner::from_text("1.0+2.0");
+        let out = parse(scan).unwrap();
+        let expected = FloatLiteral(3.0);
+        assert_eq!(out, expected);
+    }
+
+    #[test]
+    fn negative_floating_point_numbers_parse_correctly() {
+        use ExpressionIr::*;
+        let scan = Scanner::from_text("-12.34");
+        let out = parse(scan).unwrap();
+        let expected = FloatLiteral(-12.34);
+        assert_eq!(out, expected);
+    }
 }

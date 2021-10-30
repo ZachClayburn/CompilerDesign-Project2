@@ -111,6 +111,12 @@ pub fn reduce_binary_op(mut stack: Vec<ValueItem>) -> Result<Vec<ValueItem>> {
                 Box::new(NumberLiteral(rhs)),
             ),
         },
+        (FloatLiteral(lhs), FloatLiteral(rhs)) => match op {
+            Operator::Plus => FloatLiteral(lhs + rhs),
+            Operator::Minus => FloatLiteral(lhs - rhs),
+            Operator::Multiply => FloatLiteral(lhs * rhs),
+            Operator::Divide => FloatLiteral(lhs / rhs),
+        }
         (lhs, rhs) => BinaryOperation(Box::new(lhs), op, Box::new(rhs)),
     };
     stack.push(Left(expr));
@@ -152,6 +158,7 @@ pub fn reduce_unary_operator(mut stack: Vec<ValueItem>) -> Result<Vec<ValueItem>
 
     stack.push(Left(match expr {
         ExpressionIr::NumberLiteral(value) => ExpressionIr::NumberLiteral(-value),
+        ExpressionIr::FloatLiteral(value) => ExpressionIr::FloatLiteral(-value),
         exp => ExpressionIr::UnaryOperation(Operator::Minus, Box::new(exp)),
     }));
     Ok(stack)
