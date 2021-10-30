@@ -56,6 +56,7 @@ pub enum Token {
     Assign(Location),
     Plus(Location),
     Minus(Location),
+    Decrement(Location),
     Star(Location),
     Div(Location),
     Pow(Location),
@@ -119,6 +120,7 @@ impl Display for Token {
             Token::Assign(_) => write!(f, "="),
             Token::Plus(_) => write!(f, "+"),
             Token::Minus(_) => write!(f, "-"),
+            Token::Decrement(_) => write!(f, "--"),
             Token::Star(_) => write!(f, "*"),
             Token::Div(_) => write!(f, "/"),
             Token::Pow(_) => write!(f, "^"),
@@ -184,6 +186,7 @@ impl Token {
             | Token::Assign(loc)
             | Token::Plus(loc)
             | Token::Minus(loc)
+            | Token::Decrement(loc)
             | Token::Star(loc)
             | Token::Div(loc)
             | Token::Pow(loc)
@@ -212,7 +215,7 @@ mod test {
         let scan = Scanner::from_text(
             r#"
             program begin end switch case default write read for to step do if then else array
-            procedure num string return ()[]{};=+-*/^<><=>===.!=..,
+            procedure num string return ()[]{};=+ -*/^<><=>===.!=..,
             identifier 1234
             "String"
             "#,

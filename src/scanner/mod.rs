@@ -69,7 +69,16 @@ impl Iterator for Scanner {
                 '{' => Ok(Token::LBrace(self.location)),
                 '}' => Ok(Token::RBrace(self.location)),
                 ';' => Ok(Token::Semicolon(self.location)),
+                '+' if self.raw_text.next_if_eq(&'-').is_some() => Err(ScannerError {
+                    message: "+- is not allowed in the language!".into(),
+                    location: self.location,
+                }),
                 '+' => Ok(Token::Plus(self.location)),
+                '-' if self.raw_text.next_if_eq(&'-').is_some() => {
+                    let next_token = Ok(Token::Decrement(self.location));
+                    self.location.next_col();
+                    next_token
+                }
                 '-' => Ok(Token::Minus(self.location)),
                 '*' => Ok(Token::Star(self.location)),
                 '/' if self.raw_text.next_if_eq(&'/').is_some() => {
@@ -277,7 +286,7 @@ mod tests {
 
     #[test]
     fn can_lex_single_symbol_tokens() {
-        let scan = Scanner::from_text("()[]{};+-*/^,");
+        let scan = Scanner::from_text("()[]{};+ */^,");
         let tokens: Vec<Token> = scan.map(|x| x.unwrap()).collect();
         let expected = vec![
             LParen(Location { line: 1, column: 1 }),
@@ -288,7 +297,6 @@ mod tests {
             RBrace(Location { line: 1, column: 6 }),
             Semicolon(Location { line: 1, column: 7 }),
             Plus(Location { line: 1, column: 8 }),
-            Minus(Location { line: 1, column: 9 }),
             Star(Location {
                 line: 1,
                 column: 10,
@@ -328,8 +336,7 @@ mod tests {
 
     #[test]
     fn can_lex_one_or_two_character_tokens() {
-        let scan = Scanner::from_text("< <= > >= = == != . ..");
-        //                                 1234567890123456789012
+        let scan = Scanner::from_text("< <= > >= = == != . .. - --");
         let tokens: Vec<Token> = scan.map(|x| x.unwrap()).collect();
         let expected = vec![
             Less(Location { line: 1, column: 1 }),
@@ -355,6 +362,14 @@ mod tests {
             DoubleDot(Location {
                 line: 1,
                 column: 21,
+            }),
+            Minus(Location {
+                line: 1,
+                column: 24,
+            }),
+            Decrement(Location {
+                line: 1,
+                column: 26,
             }),
             EOF,
         ];
@@ -609,6 +624,20 @@ mod tests {
                 column: 1,
             }),
             EOF,
+        ];
+        assert_eq!(tokens, expected);
+    }
+
+    #[test]
+    fn plus_minus_is_rejected() {
+        let scan = Scanner::from_text("+-");
+        let tokens = scan.collect::<Vec<_>>();
+        let expected = vec![
+            Err(ScannerError {
+                message: "+- is not allowed in the language!".into(),
+                location: Location { line: 1, column: 1 },
+            }),
+            Ok(EOF),
         ];
         assert_eq!(tokens, expected);
     }

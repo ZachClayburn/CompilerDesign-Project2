@@ -327,4 +327,16 @@ mod test {
         let expected = UnaryOperation(Operator::Minus, Box::new(Variable("a".into())));
         assert_eq!(out, expected);
     }
+
+    #[test]
+    fn minus_adjacent_to_another_minus_fails() {
+        let scan = Scanner::from_text("1--1");
+        assert!(parse(scan).is_err());
+    }
+
+    #[test]
+    fn minus_adjacent_to_plus_fails() {
+        let scan = Scanner::from_text("1+-1");
+        assert!(parse(scan).is_err());
+    }
 }
