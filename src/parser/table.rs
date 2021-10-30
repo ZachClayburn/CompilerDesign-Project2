@@ -277,8 +277,8 @@ mod test {
             ("Term'", vec!["/", "Factor", "Term'"]),
             ("Term'", vec![""]),
             ("Factor", vec!["(", "Expr", ")"]),
-            ("Factor", vec!["name"]),
             ("Factor", vec!["num"]),
+            ("Factor", vec!["name"]),
         ];
 
         let first = token_sets_to_sorted_vectors(compute_first_set(
@@ -325,8 +325,8 @@ mod test {
             ("Term'", vec!["/", "Factor", "Term'"]),
             ("Term'", vec![""]),
             ("Factor", vec!["(", "Expr", ")"]),
-            ("Factor", vec!["name"]),
             ("Factor", vec!["num"]),
+            ("Factor", vec!["name"]),
         ];
 
         let first = compute_first_set(&terminals, &non_terminals, &productions);
@@ -362,8 +362,8 @@ mod test {
             ("Term'", vec!["/", "Factor", "Term'"]),
             ("Term'", vec![""]),
             ("Factor", vec!["(", "Expr", ")"]),
-            ("Factor", vec!["name"]),
             ("Factor", vec!["num"]),
+            ("Factor", vec!["name"]),
         ];
 
         let first = compute_first_set(&terminals, &non_terminals, &productions);
@@ -402,8 +402,8 @@ mod test {
             "((4, 4), 7)",
             "((4, 6), 8)",
             "((5, 5), 9)",
-            "((5, 7), 10)",
-            "((5, 8), 11)",
+            "((5, 7), 11)",
+            "((5, 8), 10)",
         ];
 
         assert_eq!(lookup, expected);
