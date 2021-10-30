@@ -180,18 +180,38 @@ impl Iterator for Scanner {
                         .collect();
                     self.location.advance_col(rest.len());
                     let content = first_char + &rest;
-                    let next = self.raw_text.peek();
-                    if next.map_or(false, |x| x.is_alphabetic()) {
-                        Err(ScannerError {
+                    match self.raw_text.peek() {
+                        Some(letter) if letter.is_alphabetic() => Err(ScannerError {
                             message: "Invalid Number".into(),
                             location: start,
-                        })
-                    } else {
-                        Ok(Token::Number(TokenInfo {
+                        }),
+                        Some(dot) if dot == &'.' => {
+                            self.raw_text.next();
+                            self.location.next_col();
+                            let rest: String = self
+                                .raw_text
+                                .by_ref()
+                                .peeking_take_while(|x| x.is_digit(10))
+                                .collect();
+                            self.location.advance_col(rest.len());
+                            let content = content + "." + &rest;
+                            match self.raw_text.peek() {
+                                Some(letter) if letter.is_alphabetic() => Err(ScannerError {
+                                    message: "Invalid Number".into(),
+                                    location: start,
+                                }),
+                                _ => Ok(Token::Float(TokenInfo {
+                                    content,
+                                    start,
+                                    stop: self.location,
+                                })),
+                            }
+                        }
+                        _ => Ok(Token::Number(TokenInfo {
                             content,
                             start,
                             stop: self.location,
-                        }))
+                        })),
                     }
                 }
                 letter if letter.is_ascii_alphabetic() => {
@@ -637,6 +657,48 @@ mod tests {
                 message: "+- is not allowed in the language!".into(),
                 location: Location { line: 1, column: 1 },
             }),
+            Ok(EOF),
+        ];
+        assert_eq!(tokens, expected);
+    }
+
+    #[test]
+    fn can_parse_floating_point_numbers() {
+        let scan = Scanner::from_text(indoc! {"
+            12.34
+            123.
+        "});
+        let tokens: Vec<Token> = scan.map(|x| x.unwrap()).collect();
+        let expected = vec![
+            Float(TokenInfo {
+                content: "12.34".into(),
+                start: Location { line: 1, column: 1 },
+                stop: Location { line: 1, column: 5 },
+            }),
+            Float(TokenInfo {
+                content: "123.".into(),
+                start: Location { line: 2, column: 1 },
+                stop: Location { line: 2, column: 4 },
+            }),
+            EOF,
+        ];
+        assert_eq!(tokens, expected);
+    }
+
+    #[test]
+    fn float_with_trailing_illegal_char_rejected() {
+        let scan = Scanner::from_text("12.34a");
+        let tokens = scan.collect::<Vec<_>>();
+        let expected = vec![
+            Err(ScannerError {
+                message: "Invalid Number".into(),
+                location: Location { line: 1, column: 1 },
+            }),
+            Ok(Identifier(TokenInfo {
+                content: "a".into(),
+                start: Location { line: 1, column: 6 },
+                stop: Location { line: 1, column: 6 },
+            })),
             Ok(EOF),
         ];
         assert_eq!(tokens, expected);

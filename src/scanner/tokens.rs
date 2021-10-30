@@ -22,6 +22,7 @@ impl Default for TokenInfo {
 pub enum Token {
     // Complex tokens
     Number(TokenInfo),
+    Float(TokenInfo),
     Identifier(TokenInfo),
     StringLiteral(TokenInfo),
     // keywords
@@ -80,6 +81,11 @@ impl Display for Token {
                 start: _,
                 stop: _,
             }) => write!(f, "Number: {}", content),
+            Token::Float(TokenInfo {
+                content,
+                start: _,
+                stop: _,
+            }) => write!(f, "Float: {}", content),
             Token::Identifier(TokenInfo {
                 content,
                 start: _,
@@ -142,6 +148,11 @@ impl Token {
     pub fn format_location(&self) -> String {
         match self {
             Token::Number(TokenInfo {
+                content: _,
+                start: loc,
+                stop: _,
+            })
+            | Token::Float(TokenInfo {
                 content: _,
                 start: loc,
                 stop: _,
@@ -216,7 +227,7 @@ mod test {
             r#"
             program begin end switch case default write read for to step do if then else array
             procedure num string return ()[]{};=+ -*/^<><=>===.!=..,
-            identifier 1234
+            identifier 1234 12.34
             "String"
             "#,
         );
@@ -269,6 +280,7 @@ mod test {
             ",",
             "Identifier: identifier",
             "Number: 1234",
+            "Float: 12.34",
             "StringLiteral: String",
             "EOF",
         ];
