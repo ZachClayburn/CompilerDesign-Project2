@@ -40,9 +40,10 @@ fn main() {
         .get_matches();
 
     let level = match matches.occurrences_of("debug") {
-        0 => log::LevelFilter::Warn,
-        1 => log::LevelFilter::Info,
-        2 => log::LevelFilter::Debug,
+        0 => log::LevelFilter::Error,
+        1 => log::LevelFilter::Warn,
+        2 => log::LevelFilter::Info,
+        3 => log::LevelFilter::Debug,
         _ => log::LevelFilter::Trace,
     };
     SimpleLogger::new().with_level(level).init().unwrap();
