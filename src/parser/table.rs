@@ -12,6 +12,8 @@ pub(super) enum NonTerminal {
     ExprPrime,
     Term,
     TermPrime,
+    Power,
+    PowerPrime,
     Factor,
     Atom,
     Reduction(ReductionOp),
@@ -25,9 +27,11 @@ pub struct Table {
 
 impl Table {
     pub(super) fn new() -> Self {
-        let terminals = vec!["+", "-", "*", "/", "(", ")", "name", "num", "float"];
+        let terminals = vec!["+", "-", "*", "/", "^", "(", ")", "name", "num", "float"];
 
-        let non_terminals = vec!["Goal", "Expr", "Expr'", "Term", "Term'", "Factor", "Atom"];
+        let non_terminals = vec![
+            "Goal", "Expr", "Expr'", "Term", "Term'", "Power", "Power'", "Factor", "Atom",
+        ];
 
         let productions = vec![
             /* 0*/ ("Goal", vec!["Expr"]),
@@ -35,16 +39,19 @@ impl Table {
             /* 2*/ ("Expr'", vec!["+", "Term", "Expr'"]),
             /* 3*/ ("Expr'", vec!["-", "Term", "Expr'"]),
             /* 4*/ ("Expr'", vec![""]),
-            /* 5*/ ("Term", vec!["Factor", "Term'"]),
-            /* 6*/ ("Term'", vec!["*", "Factor", "Term'"]),
-            /* 7*/ ("Term'", vec!["/", "Factor", "Term'"]),
+            /* 5*/ ("Term", vec!["Power", "Term'"]),
+            /* 6*/ ("Term'", vec!["*", "Power", "Term'"]),
+            /* 7*/ ("Term'", vec!["/", "Power", "Term'"]),
             /* 8*/ ("Term'", vec![""]),
-            /* 9*/ ("Factor", vec!["(", "Expr", ")"]),
-            /*10*/ ("Factor", vec!["Atom"]),
-            /*11*/ ("Factor", vec!["-", "Atom"]),
-            /*12*/ ("Atom", vec!["num"]),
-            /*13*/ ("Atom", vec!["name"]),
-            /*14*/ ("Atom", vec!["float"]),
+            /* 9*/ ("Power", vec!["Factor", "Power'"]),
+            /*10*/ ("Power'", vec!["^", "Factor", "Power'"]),
+            /*11*/ ("Power'", vec![""]),
+            /*12*/ ("Factor", vec!["(", "Expr", ")"]),
+            /*13*/ ("Factor", vec!["Atom"]),
+            /*14*/ ("Factor", vec!["-", "Atom"]),
+            /*15*/ ("Atom", vec!["num"]),
+            /*16*/ ("Atom", vec!["name"]),
+            /*17*/ ("Atom", vec!["float"]),
         ];
 
         let first = compute_first_set(&terminals, &non_terminals, &productions);
@@ -63,8 +70,10 @@ impl Table {
             NonTerminal::ExprPrime => 2,
             NonTerminal::Term => 3,
             NonTerminal::TermPrime => 4,
-            NonTerminal::Factor => 5,
-            NonTerminal::Atom => 6,
+            NonTerminal::Power => 5,
+            NonTerminal::PowerPrime => 6,
+            NonTerminal::Factor => 7,
+            NonTerminal::Atom => 8,
             NonTerminal::Reduction(_) => {
                 warn!("trying to assign a focust number to a reduction operation!");
                 return None;
@@ -81,11 +90,12 @@ impl Table {
             Token::Minus(_) => 2,
             Token::Star(_) => 3,
             Token::Div(_) => 4,
-            Token::LParen(_) => 5,
-            Token::RParen(_) => 6,
-            Token::Identifier(_) => 7,
-            Token::Number(_) => 8,
-            Token::Float(_) => 9,
+            Token::Pow(_) => 5,
+            Token::LParen(_) => 6,
+            Token::RParen(_) => 7,
+            Token::Identifier(_) => 8,
+            Token::Number(_) => 9,
+            Token::Float(_) => 10,
             unexpected => {
                 warn!("Trying to assign a word number to {}", unexpected);
                 return None;
@@ -134,13 +144,13 @@ impl Table {
             }
             5 => {
                 trace!("Running rule 5");
-                Some(vec![Left(Factor), Left(TermPrime)])
+                Some(vec![Left(Power), Left(TermPrime)])
             }
             6 => {
                 trace!("Running rule 6");
                 Some(vec![
                     Right(Star(<_>::default())),
-                    Left(Factor),
+                    Left(Power),
                     Left(Reduction(reduce_binary_op)),
                     Left(TermPrime),
                 ])
@@ -149,7 +159,7 @@ impl Table {
                 trace!("Running rule 7");
                 Some(vec![
                     Right(Div(<_>::default())),
-                    Left(Factor),
+                    Left(Power),
                     Left(Reduction(reduce_binary_op)),
                     Left(TermPrime),
                 ])
@@ -160,6 +170,23 @@ impl Table {
             }
             9 => {
                 trace!("Running rule 9");
+                Some(vec![Left(Factor), Left(PowerPrime)])
+            }
+            10 => {
+                trace!("Running rule 10");
+                Some(vec![
+                    Right(Pow(<_>::default())),
+                    Left(Factor),
+                    Left(Reduction(reduce_binary_op)),
+                    Left(PowerPrime),
+                ])
+            }
+            11 => {
+                trace!("Running rule 11");
+                Some(vec![])
+            }
+            12 => {
+                trace!("Running rule 12");
                 Some(vec![
                     Right(LParen(<_>::default())),
                     Left(Expr),
@@ -167,34 +194,34 @@ impl Table {
                     Left(Reduction(reduce_parenthetical)),
                 ])
             }
-            10 => {
-                trace!("Running rule 10");
+            13 => {
+                trace!("Running rule 13");
                 Some(vec![Left(Atom)])
             }
-            11 => {
-                trace!("Running rule 11");
+            14 => {
+                trace!("Running rule 14");
                 Some(vec![
                     Right(Minus(<_>::default())),
                     Left(Atom),
                     Left(Reduction(reduce_unary_operator)),
                 ])
             }
-            12 => {
-                trace!("Running rule 12");
+            15 => {
+                trace!("Running rule 15");
                 Some(vec![
                     Right(Number(<_>::default())),
                     Left(Reduction(reduce_value)),
                 ])
             }
-            13 => {
-                trace!("Running rule 13");
+            16 => {
+                trace!("Running rule 16");
                 Some(vec![
                     Right(Identifier(<_>::default())),
                     Left(Reduction(reduce_value)),
                 ])
             }
-            14 => {
-                trace!("Running rule 14");
+            17 => {
+                trace!("Running rule 17");
                 Some(vec![
                     Right(Float(<_>::default())),
                     Left(Reduction(reduce_value)),

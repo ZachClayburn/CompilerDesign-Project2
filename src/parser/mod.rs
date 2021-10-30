@@ -372,4 +372,17 @@ mod test {
         let expected = FloatLiteral(-12.34);
         assert_eq!(out, expected);
     }
+
+    #[test]
+    fn single_exponent_parses_correctly() {
+        use ExpressionIr::*;
+        let scan = Scanner::from_text("a^b");
+        let out = parse(scan).unwrap();
+        let expected = BinaryOperation(
+            Box::new(Variable("a".into())),
+            Operator::Power,
+            Box::new(Variable("b".into())),
+        );
+        assert_eq!(out, expected);
+    }
 }

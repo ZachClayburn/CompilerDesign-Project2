@@ -7,6 +7,7 @@ pub enum Operator {
     Minus,
     Multiply,
     Divide,
+    Power,
 }
 
 impl Display for Operator {
@@ -19,6 +20,7 @@ impl Display for Operator {
                 Operator::Minus => '-',
                 Operator::Multiply => '*',
                 Operator::Divide => '/',
+                Operator::Power => '^',
             }
         )
     }
@@ -76,34 +78,31 @@ pub fn reduce_value(mut stack: Vec<ValueItem>) -> Result<Vec<ValueItem>> {
 pub fn reduce_binary_op(mut stack: Vec<ValueItem>) -> Result<Vec<ValueItem>> {
     use super::Token::*;
     use ExpressionIr::*;
-    match &stack[..] {
-        [] | [_] | [_, _] => {
-            return Err("Insufficient values to reduce binary operation".into());
-        }
-        [.., Left(_), Right(Plus(_) | Minus(_) | Star(_) | Div(_)), Left(_)] => (),
-        [.., wrong1, wrong2, wrong3] => {
-            return Err(format!(
-                "Incorrect types for binary operation reduction: {}, {}, {}",
-                wrong1, wrong2, wrong3
-            )
-            .into());
-        }
+    let rhs = match stack.pop() {
+        Some(Left(expr)) => expr,
+        Some(bad) => return Err(format!("Expected an expression, found {}", bad).into()),
+        None => return Err("Missing ) while trying to reduce parenthetical".into()),
     };
-    let rhs = stack.pop().unwrap().unwrap_left();
     let op = match stack.pop().unwrap().unwrap_right() {
         Plus(_) => Operator::Plus,
         Minus(_) => Operator::Minus,
         Star(_) => Operator::Multiply,
         Div(_) => Operator::Divide,
-        bad => unreachable!("sould not be able to have {} as the operator", bad),
+        Pow(_) => Operator::Power,
+        bad => return Err(format!("{} not a valid binary operator", bad).into()),
     };
-    let lhs = stack.pop().unwrap().unwrap_left();
+    let lhs = match stack.pop() {
+        Some(Left(expr)) => expr,
+        Some(bad) => return Err(format!("Expected an expression, found {}", bad).into()),
+        None => return Err("Missing ) while trying to reduce parenthetical".into()),
+    };
 
     let expr = match (lhs, rhs) {
         (NumberLiteral(lhs), NumberLiteral(rhs)) => match op {
             Operator::Plus => NumberLiteral(lhs + rhs),
             Operator::Minus => NumberLiteral(lhs - rhs),
             Operator::Multiply => NumberLiteral(lhs * rhs),
+            Operator::Power => todo!(),
             Operator::Divide if rhs != 0 => NumberLiteral(lhs / rhs),
             op => BinaryOperation(
                 Box::new(NumberLiteral(lhs)),
@@ -116,7 +115,8 @@ pub fn reduce_binary_op(mut stack: Vec<ValueItem>) -> Result<Vec<ValueItem>> {
             Operator::Minus => FloatLiteral(lhs - rhs),
             Operator::Multiply => FloatLiteral(lhs * rhs),
             Operator::Divide => FloatLiteral(lhs / rhs),
-        }
+            Operator::Power => todo!(),
+        },
         (lhs, rhs) => BinaryOperation(Box::new(lhs), op, Box::new(rhs)),
     };
     stack.push(Left(expr));
