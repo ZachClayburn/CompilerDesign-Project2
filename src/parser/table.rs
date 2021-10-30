@@ -1,9 +1,8 @@
-use log::trace;
-
 use super::{ast, Either, Left, Right, Token};
 use ast::{
     reduce_binary_op, reduce_parenthetical, reduce_unary_operator, reduce_value, ReductionOp,
 };
+use log::{trace, warn};
 use std::collections::{HashMap, HashSet};
 
 #[derive(Debug, PartialEq, Clone)]
@@ -57,31 +56,41 @@ impl Table {
     }
 
     fn get_focus_number(&self, non_terminal: &NonTerminal) -> Option<usize> {
-        match non_terminal {
-            NonTerminal::Goal => Some(0),
-            NonTerminal::Expr => Some(1),
-            NonTerminal::ExprPrime => Some(2),
-            NonTerminal::Term => Some(3),
-            NonTerminal::TermPrime => Some(4),
-            NonTerminal::Factor => Some(5),
-            NonTerminal::Atom => Some(6),
-            NonTerminal::Reduction(_) => None,
-        }
+        let number = match non_terminal {
+            NonTerminal::Goal => 0,
+            NonTerminal::Expr => 1,
+            NonTerminal::ExprPrime => 2,
+            NonTerminal::Term => 3,
+            NonTerminal::TermPrime => 4,
+            NonTerminal::Factor => 5,
+            NonTerminal::Atom => 6,
+            NonTerminal::Reduction(_) => {
+                warn!("trying to assign a focust number to a reduction operation!");
+                return None;
+            }
+        };
+        trace!("Assigning {:?} the focus number {}", non_terminal, number);
+        Some(number)
     }
 
     fn get_word_number(&self, terminal: &Token) -> Option<usize> {
-        match terminal {
-            Token::EOF => Some(0),
-            Token::Plus(_) => Some(1),
-            Token::Minus(_) => Some(2),
-            Token::Star(_) => Some(3),
-            Token::Div(_) => Some(4),
-            Token::LParen(_) => Some(5),
-            Token::RParen(_) => Some(6),
-            Token::Identifier(_) => Some(7),
-            Token::Number(_) => Some(8),
-            _ => None,
-        }
+        let number = match terminal {
+            Token::EOF => 0,
+            Token::Plus(_) => 1,
+            Token::Minus(_) => 2,
+            Token::Star(_) => 3,
+            Token::Div(_) => 4,
+            Token::LParen(_) => 5,
+            Token::RParen(_) => 6,
+            Token::Identifier(_) => 7,
+            Token::Number(_) => 8,
+            unexpected => {
+                warn!("Trying to assign a word number to {}", unexpected);
+                return None;
+            }
+        };
+        trace!("Assigning {} the word number {}", terminal, number);
+        Some(number)
     }
 
     pub(super) fn at(&self, focus: &NonTerminal, word: &Token) -> Option<Vec<ProductionItem>> {
