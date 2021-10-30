@@ -60,14 +60,14 @@ pub fn parse(scan: Peekable<Scanner>) -> Result<ExpressionIr> {
     let table = Table {};
 
     'outer: for item in scan {
-        let word = &item?;
+        let word = item?;
         loop {
             debug!(
                 "\nStack:{:?}\nValueStack:{:?}\nWord: {}",
                 production_stack, value_stack, word
             );
             match production_stack.last().unwrap() {
-                Right(Token::EOF) if word == &Token::EOF => match value_stack.len() {
+                Right(Token::EOF) if word == Token::EOF => match value_stack.len() {
                     1 => {
                         if let Left(final_value) = value_stack.pop().unwrap() {
                             return Ok(final_value);
@@ -83,9 +83,9 @@ pub fn parse(scan: Peekable<Scanner>) -> Result<ExpressionIr> {
                         .into())
                     }
                 },
-                Right(terminal) if discriminant(terminal) == discriminant(word) => {
-                    let token = production_stack.pop().unwrap().unwrap_right();
-                    value_stack.push(Right(token));
+                Right(terminal) if discriminant(terminal) == discriminant(&word) => {
+                    let _ = production_stack.pop().unwrap().unwrap_right();
+                    value_stack.push(Right(word));
                     continue 'outer;
                 }
                 Right(bad_terminal) => {
@@ -97,7 +97,7 @@ pub fn parse(scan: Peekable<Scanner>) -> Result<ExpressionIr> {
                     if let &NonTerminal::Reduction(op) = non_terminal {
                         value_stack = op(value_stack)?;
                         production_stack.pop();
-                    } else if let Some(new_items) = table.at(non_terminal, word) {
+                    } else if let Some(new_items) = table.at(non_terminal, &word) {
                         production_stack.pop();
                         for new_item in new_items.into_iter().rev() {
                             production_stack.push(new_item);
