@@ -24,9 +24,10 @@ impl Display for Operator {
     }
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq)]
 pub enum ExpressionIr {
     NumberLiteral(i32),
+    FloatLiteral(f32),
     Variable(String),
     BinaryOperation(Box<Self>, Operator, Box<Self>),
     UnaryOperation(Operator, Box<Self>),
@@ -36,6 +37,7 @@ impl Display for ExpressionIr {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             ExpressionIr::NumberLiteral(num) => write!(f, "{}", num),
+            ExpressionIr::FloatLiteral(num) => write!(f, "{}", num),
             ExpressionIr::Variable(name) => write!(f, "{}", name),
             ExpressionIr::BinaryOperation(lhs, op, rhs) => write!(f, "({} {} {})", lhs, op, rhs),
             ExpressionIr::UnaryOperation(op, exp) => write!(f, "{} {}", op, exp),
@@ -55,6 +57,11 @@ pub fn reduce_value(mut stack: Vec<ValueItem>) -> Result<Vec<ValueItem>> {
         }
         Some(Right(Token::Identifier(info))) => {
             stack.push(Left(ExpressionIr::Variable(info.content)));
+            Ok(stack)
+        }
+        Some(Right(Token::Float(info))) => {
+            let number = info.content.parse()?;
+            stack.push(Left(ExpressionIr::FloatLiteral(number)));
             Ok(stack)
         }
         Some(unexpected) => Err(format!(

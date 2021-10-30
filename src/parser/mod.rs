@@ -6,7 +6,7 @@ use ast::{ExpressionIr, ValueItem};
 use either::Either::{self, Left, Right};
 use log::debug;
 use std::fmt::Display;
-use std::num::ParseIntError;
+use std::num::{ParseFloatError, ParseIntError};
 use std::{iter::Peekable, mem::discriminant};
 use table::{NonTerminal, Table};
 
@@ -50,6 +50,12 @@ impl From<ScannerError> for ParseError {
 
 impl From<ParseIntError> for ParseError {
     fn from(err: ParseIntError) -> Self {
+        err.to_string().into()
+    }
+}
+
+impl From<ParseFloatError> for ParseError {
+    fn from(err: ParseFloatError) -> Self {
         err.to_string().into()
     }
 }
@@ -338,5 +344,14 @@ mod test {
     fn minus_adjacent_to_plus_fails() {
         let scan = Scanner::from_text("1+-1");
         assert!(parse(scan).is_err());
+    }
+
+    #[test]
+    fn single_float_parses_correctly() {
+        use ExpressionIr::*;
+        let scan = Scanner::from_text("12.34");
+        let out = parse(scan).unwrap();
+        let expected = FloatLiteral(12.34);
+        assert_eq!(out, expected);
     }
 }

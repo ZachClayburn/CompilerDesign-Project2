@@ -25,7 +25,7 @@ pub struct Table {
 
 impl Table {
     pub(super) fn new() -> Self {
-        let terminals = vec!["+", "-", "*", "/", "(", ")", "name", "num"];
+        let terminals = vec!["+", "-", "*", "/", "(", ")", "name", "num", "float"];
 
         let non_terminals = vec!["Goal", "Expr", "Expr'", "Term", "Term'", "Factor", "Atom"];
 
@@ -44,6 +44,7 @@ impl Table {
             /*11*/ ("Factor", vec!["-", "Atom"]),
             /*12*/ ("Atom", vec!["num"]),
             /*13*/ ("Atom", vec!["name"]),
+            /*14*/ ("Atom", vec!["float"]),
         ];
 
         let first = compute_first_set(&terminals, &non_terminals, &productions);
@@ -84,6 +85,7 @@ impl Table {
             Token::RParen(_) => 6,
             Token::Identifier(_) => 7,
             Token::Number(_) => 8,
+            Token::Float(_) => 9,
             unexpected => {
                 warn!("Trying to assign a word number to {}", unexpected);
                 return None;
@@ -191,7 +193,17 @@ impl Table {
                     Left(Reduction(reduce_value)),
                 ])
             }
-            _ => None,
+            14 => {
+                trace!("Running rule 14");
+                Some(vec![
+                    Right(Float(<_>::default())),
+                    Left(Reduction(reduce_value)),
+                ])
+            }
+            _ => {
+                trace!("Not running any rule!");
+                None
+            }
         }
     }
 }
