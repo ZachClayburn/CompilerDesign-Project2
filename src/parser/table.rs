@@ -1,7 +1,9 @@
 use log::trace;
 
 use super::{ast, Either, Left, Right, Token};
-use ast::{reduce_binary_op, reduce_parenthetical, reduce_value, ReductionOp};
+use ast::{
+    reduce_binary_op, reduce_parenthetical, reduce_unary_operator, reduce_value, ReductionOp,
+};
 use std::collections::{HashMap, HashSet};
 
 #[derive(Debug, PartialEq, Clone)]
@@ -12,6 +14,7 @@ pub(super) enum NonTerminal {
     Term,
     TermPrime,
     Factor,
+    Atom,
     Reduction(ReductionOp),
 }
 
@@ -25,21 +28,23 @@ impl Table {
     pub(super) fn new() -> Self {
         let terminals = vec!["+", "-", "*", "/", "(", ")", "name", "num"];
 
-        let non_terminals = vec!["Goal", "Expr", "Expr'", "Term", "Term'", "Factor"];
+        let non_terminals = vec!["Goal", "Expr", "Expr'", "Term", "Term'", "Factor", "Atom"];
 
         let productions = vec![
-            ("Goal", vec!["Expr"]),
-            ("Expr", vec!["Term", "Expr'"]),
-            ("Expr'", vec!["+", "Term", "Expr'"]),
-            ("Expr'", vec!["-", "Term", "Expr'"]),
-            ("Expr'", vec![""]),
-            ("Term", vec!["Factor", "Term'"]),
-            ("Term'", vec!["*", "Factor", "Term'"]),
-            ("Term'", vec!["/", "Factor", "Term'"]),
-            ("Term'", vec![""]),
-            ("Factor", vec!["(", "Expr", ")"]),
-            ("Factor", vec!["num"]),
-            ("Factor", vec!["name"]),
+            /* 0*/ ("Goal", vec!["Expr"]),
+            /* 1*/ ("Expr", vec!["Term", "Expr'"]),
+            /* 2*/ ("Expr'", vec!["+", "Term", "Expr'"]),
+            /* 3*/ ("Expr'", vec!["-", "Term", "Expr'"]),
+            /* 4*/ ("Expr'", vec![""]),
+            /* 5*/ ("Term", vec!["Factor", "Term'"]),
+            /* 6*/ ("Term'", vec!["*", "Factor", "Term'"]),
+            /* 7*/ ("Term'", vec!["/", "Factor", "Term'"]),
+            /* 8*/ ("Term'", vec![""]),
+            /* 9*/ ("Factor", vec!["(", "Expr", ")"]),
+            /*10*/ ("Factor", vec!["Atom"]),
+            /*11*/ ("Factor", vec!["-", "Atom"]),
+            /*12*/ ("Atom", vec!["num"]),
+            /*13*/ ("Atom", vec!["name"]),
         ];
 
         let first = compute_first_set(&terminals, &non_terminals, &productions);
@@ -59,6 +64,7 @@ impl Table {
             NonTerminal::Term => Some(3),
             NonTerminal::TermPrime => Some(4),
             NonTerminal::Factor => Some(5),
+            NonTerminal::Atom => Some(6),
             NonTerminal::Reduction(_) => None,
         }
     }
@@ -152,13 +158,25 @@ impl Table {
             }
             10 => {
                 trace!("Running rule 10");
+                Some(vec![Left(Atom)])
+            }
+            11 => {
+                trace!("Running rule 11");
+                Some(vec![
+                    Right(Minus(<_>::default())),
+                    Left(Atom),
+                    Left(Reduction(reduce_unary_operator)),
+                ])
+            }
+            12 => {
+                trace!("Running rule 12");
                 Some(vec![
                     Right(Number(<_>::default())),
                     Left(Reduction(reduce_value)),
                 ])
             }
-            11 => {
-                trace!("Running rule 11");
+            13 => {
+                trace!("Running rule 13");
                 Some(vec![
                     Right(Identifier(<_>::default())),
                     Left(Reduction(reduce_value)),

@@ -2,23 +2,23 @@ use super::{Either, Left, Result, Right, Token};
 use std::fmt::Display;
 
 #[derive(Debug, PartialEq, Eq)]
-pub enum BinaryOperator {
+pub enum Operator {
     Plus,
     Minus,
     Multiply,
     Divide,
 }
 
-impl Display for BinaryOperator {
+impl Display for Operator {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
             "{}",
             match self {
-                BinaryOperator::Plus => '+',
-                BinaryOperator::Minus => '-',
-                BinaryOperator::Multiply => '*',
-                BinaryOperator::Divide => '/',
+                Operator::Plus => '+',
+                Operator::Minus => '-',
+                Operator::Multiply => '*',
+                Operator::Divide => '/',
             }
         )
     }
@@ -28,7 +28,8 @@ impl Display for BinaryOperator {
 pub enum ExpressionIr {
     NumberLiteral(i32),
     Variable(String),
-    BinaryOperation(Box<Self>, BinaryOperator, Box<Self>),
+    BinaryOperation(Box<Self>, Operator, Box<Self>),
+    UnaryOperation(Operator, Box<Self>),
 }
 
 impl Display for ExpressionIr {
@@ -37,6 +38,7 @@ impl Display for ExpressionIr {
             ExpressionIr::NumberLiteral(num) => write!(f, "{}", num),
             ExpressionIr::Variable(name) => write!(f, "{}", name),
             ExpressionIr::BinaryOperation(lhs, op, rhs) => write!(f, "({} {} {})", lhs, op, rhs),
+            ExpressionIr::UnaryOperation(op, exp) => write!(f, "{} {}", op, exp),
         }
     }
 }
@@ -82,20 +84,20 @@ pub fn reduce_binary_op(mut stack: Vec<ValueItem>) -> Result<Vec<ValueItem>> {
     };
     let rhs = stack.pop().unwrap().unwrap_left();
     let op = match stack.pop().unwrap().unwrap_right() {
-        Plus(_) => BinaryOperator::Plus,
-        Minus(_) => BinaryOperator::Minus,
-        Star(_) => BinaryOperator::Multiply,
-        Div(_) => BinaryOperator::Divide,
+        Plus(_) => Operator::Plus,
+        Minus(_) => Operator::Minus,
+        Star(_) => Operator::Multiply,
+        Div(_) => Operator::Divide,
         bad => unreachable!("sould not be able to have {} as the operator", bad),
     };
     let lhs = stack.pop().unwrap().unwrap_left();
 
     let expr = match (lhs, rhs) {
         (NumberLiteral(lhs), NumberLiteral(rhs)) => match op {
-            BinaryOperator::Plus => NumberLiteral(lhs + rhs),
-            BinaryOperator::Minus => NumberLiteral(lhs - rhs),
-            BinaryOperator::Multiply => NumberLiteral(lhs * rhs),
-            BinaryOperator::Divide if rhs != 0 => NumberLiteral(lhs / rhs),
+            Operator::Plus => NumberLiteral(lhs + rhs),
+            Operator::Minus => NumberLiteral(lhs - rhs),
+            Operator::Multiply => NumberLiteral(lhs * rhs),
+            Operator::Divide if rhs != 0 => NumberLiteral(lhs / rhs),
             op => BinaryOperation(
                 Box::new(NumberLiteral(lhs)),
                 op,
@@ -126,5 +128,24 @@ pub fn reduce_parenthetical(mut stack: Vec<ValueItem>) -> Result<Vec<ValueItem>>
     };
 
     stack.push(Left(expr));
+    Ok(stack)
+}
+
+pub fn reduce_unary_operator(mut stack: Vec<ValueItem>) -> Result<Vec<ValueItem>> {
+    let expr = match stack.pop() {
+        Some(Left(expr)) => expr,
+        Some(bad) => return Err(format!("Expected expression, found {}", bad).into()),
+        None => return Err("Missing expression while trying to reduce unary operator".into()),
+    };
+    match stack.pop() {
+        Some(Right(Token::Minus(_))) => (),
+        Some(bad) => return Err(format!("Expected -, found {}", bad).into()),
+        None => return Err("Missing - while trying to reduce unary operator".into()),
+    };
+
+    stack.push(Left(match expr {
+        ExpressionIr::NumberLiteral(value) => ExpressionIr::NumberLiteral(-value),
+        exp => ExpressionIr::UnaryOperation(Operator::Minus, Box::new(exp)),
+    }));
     Ok(stack)
 }

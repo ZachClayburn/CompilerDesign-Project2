@@ -200,7 +200,7 @@ mod test {
         let out = parse(scan).unwrap();
         let expected = BinaryOperation(
             Box::new(Variable("a".into())),
-            BinaryOperator::Plus,
+            Operator::Plus,
             Box::new(Variable("b".into())),
         );
         assert_eq!(out, expected);
@@ -213,7 +213,7 @@ mod test {
         let out = parse(scan).unwrap();
         let expected = BinaryOperation(
             Box::new(Variable("a".into())),
-            BinaryOperator::Minus,
+            Operator::Minus,
             Box::new(Variable("b".into())),
         );
         assert_eq!(out, expected);
@@ -226,7 +226,7 @@ mod test {
         let out = parse(scan).unwrap();
         let expected = BinaryOperation(
             Box::new(Variable("a".into())),
-            BinaryOperator::Multiply,
+            Operator::Multiply,
             Box::new(Variable("b".into())),
         );
         assert_eq!(out, expected);
@@ -239,7 +239,7 @@ mod test {
         let out = parse(scan).unwrap();
         let expected = BinaryOperation(
             Box::new(Variable("a".into())),
-            BinaryOperator::Divide,
+            Operator::Divide,
             Box::new(Variable("b".into())),
         );
         assert_eq!(out, expected);
@@ -254,13 +254,13 @@ mod test {
             Box::new(BinaryOperation(
                 Box::new(BinaryOperation(
                     Box::new(Variable("a".into())),
-                    BinaryOperator::Multiply,
+                    Operator::Multiply,
                     Box::new(Variable("b".into())),
                 )),
-                BinaryOperator::Minus,
+                Operator::Minus,
                 Box::new(Variable("c".into())),
             )),
-            BinaryOperator::Plus,
+            Operator::Plus,
             Box::new(Variable("d".into())),
         );
         assert_eq!(out, expected);
@@ -304,9 +304,27 @@ mod test {
         let out = parse(scan).unwrap();
         let expected = BinaryOperation(
             Box::new(NumberLiteral(1)),
-            BinaryOperator::Divide,
+            Operator::Divide,
             Box::new(NumberLiteral(0)),
         );
+        assert_eq!(out, expected);
+    }
+
+    #[test]
+    fn negative_numbers_parse_correctly() {
+        use ExpressionIr::*;
+        let scan = Scanner::from_text("-1");
+        let out = parse(scan).unwrap();
+        let expected = NumberLiteral(-1);
+        assert_eq!(out, expected);
+    }
+
+    #[test]
+    fn negative_variables_parse_correctly() {
+        use ExpressionIr::*;
+        let scan = Scanner::from_text("-a");
+        let out = parse(scan).unwrap();
+        let expected = UnaryOperation(Operator::Minus, Box::new(Variable("a".into())));
         assert_eq!(out, expected);
     }
 }
