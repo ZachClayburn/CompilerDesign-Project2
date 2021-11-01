@@ -1,7 +1,7 @@
 use super::Location;
 use std::fmt::Display;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct TokenInfo {
     pub content: String,
     pub start: Location,
@@ -18,7 +18,7 @@ impl Default for TokenInfo {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Token {
     // Complex tokens
     Number(TokenInfo),
@@ -298,7 +298,9 @@ mod test {
         let formatted = scan
             .map(|x| x.unwrap().format_location())
             .collect::<Vec<_>>();
-        let expected = vec!["1:1", "1:5", "2:1", "2:3", "2:5", "3:5", "3:11", "4:2", "EOF"];
+        let expected = vec![
+            "1:1", "1:5", "2:1", "2:3", "2:5", "3:5", "3:11", "4:2", "EOF",
+        ];
         assert_eq!(formatted, expected);
     }
 }

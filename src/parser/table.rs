@@ -2,10 +2,12 @@ use super::{ast, Either, Left, Right, Token};
 use ast::{
     reduce_binary_op, reduce_parenthetical, reduce_unary_operator, reduce_value, ReductionOp,
 };
-use log::{trace, warn};
+use log::{error, trace, warn};
 use std::collections::{HashMap, HashSet};
+use std::fmt::Display;
+use std::mem::discriminant;
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Copy, Eq, PartialOrd, Ord)]
 pub(super) enum NonTerminal {
     Goal,
     Expr,
@@ -19,219 +21,256 @@ pub(super) enum NonTerminal {
     Reduction(ReductionOp),
 }
 
+impl Display for NonTerminal {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        use std::fmt::Error;
+        match self {
+            NonTerminal::Goal => write!(f, "Goal"),
+            NonTerminal::Expr => write!(f, "Expr"),
+            NonTerminal::ExprPrime => write!(f, "Expr'"),
+            NonTerminal::Term => write!(f, "Term"),
+            NonTerminal::TermPrime => write!(f, "Term'"),
+            NonTerminal::Power => write!(f, "Power"),
+            NonTerminal::PowerPrime => write!(f, "Power'"),
+            NonTerminal::Factor => write!(f, "Factor"),
+            NonTerminal::Atom => write!(f, "Atom"),
+            NonTerminal::Reduction(_) => {
+                error!("Cannot format a reduction!");
+                Err(Error {})
+            }
+        }
+    }
+}
+
 pub(super) type ProductionItem = Either<NonTerminal, Token>;
 
 pub struct Table {
     lookup: HashMap<(usize, usize), usize>,
+    rules: Vec<Vec<ProductionItem>>,
+    terminals: Vec<Token>,
+    non_terminals: Vec<NonTerminal>,
 }
 
 impl Table {
     pub(super) fn new() -> Self {
-        let terminals = vec!["+", "-", "*", "/", "^", "(", ")", "name", "num", "float"];
+        use NonTerminal::*;
+        use Token::*;
+        let productions = {
+            vec![
+                /*0*/ (Goal, vec![Left(Expr)]),
+                /*1*/ (Expr, vec![Left(Term), Left(ExprPrime)]),
+                /*2*/
+                (
+                    ExprPrime,
+                    vec![
+                        Right(Plus(<_>::default())),
+                        Left(Term),
+                        Left(Reduction(reduce_binary_op)),
+                        Left(ExprPrime),
+                    ],
+                ),
+                /*3*/
+                (
+                    ExprPrime,
+                    vec![
+                        Right(Minus(<_>::default())),
+                        Left(Term),
+                        Left(Reduction(reduce_binary_op)),
+                        Left(ExprPrime),
+                    ],
+                ),
+                (ExprPrime, /*4*/ vec![]),
+                /*5*/ (Term, vec![Left(Power), Left(TermPrime)]),
+                /*6*/
+                (
+                    TermPrime,
+                    vec![
+                        Right(Star(<_>::default())),
+                        Left(Power),
+                        Left(Reduction(reduce_binary_op)),
+                        Left(TermPrime),
+                    ],
+                ),
+                /*7*/
+                (
+                    TermPrime,
+                    vec![
+                        Right(Div(<_>::default())),
+                        Left(Power),
+                        Left(Reduction(reduce_binary_op)),
+                        Left(TermPrime),
+                    ],
+                ),
+                /*8*/ (TermPrime, vec![]),
+                /*9*/ (Power, vec![Left(Factor), Left(PowerPrime)]),
+                /*10*/
+                (
+                    PowerPrime,
+                    vec![
+                        Right(Pow(<_>::default())),
+                        Left(Factor),
+                        Left(Reduction(reduce_binary_op)),
+                        Left(PowerPrime),
+                    ],
+                ),
+                /*11*/ (PowerPrime, vec![]),
+                /*12*/
+                (
+                    Factor,
+                    vec![
+                        Right(LParen(<_>::default())),
+                        Left(Expr),
+                        Right(RParen(<_>::default())),
+                        Left(Reduction(reduce_parenthetical)),
+                    ],
+                ),
+                /*13*/ (Factor, vec![Left(Atom)]),
+                /*14*/
+                (
+                    Factor,
+                    vec![
+                        Right(Minus(<_>::default())),
+                        Left(Atom),
+                        Left(Reduction(reduce_unary_operator)),
+                    ],
+                ),
+                /*15*/
+                (
+                    Atom,
+                    vec![Right(Number(<_>::default())), Left(Reduction(reduce_value))],
+                ),
+                /*16*/
+                (
+                    Atom,
+                    vec![
+                        Right(Identifier(<_>::default())),
+                        Left(Reduction(reduce_value)),
+                    ],
+                ),
+                /*17*/
+                (
+                    Atom,
+                    vec![Right(Float(<_>::default())), Left(Reduction(reduce_value))],
+                ),
+            ]
+        };
+        let non_terminals = {
+            let mut temp = productions.iter().map(|(nt, _)| *nt).collect::<Vec<_>>();
+            temp.sort();
+            temp.dedup();
+            temp
+        };
+        let rules = productions
+            .iter()
+            .map(|(_, rule)| rule.clone())
+            .collect::<Vec<_>>();
+        let terminals = {
+            let mut temp = rules
+                .iter()
+                .flatten()
+                .filter_map(|i| i.clone().right())
+                .collect::<Vec<_>>();
+            temp.sort();
+            temp.dedup();
+            temp
+        };
 
-        let non_terminals = vec![
-            "Goal", "Expr", "Expr'", "Term", "Term'", "Power", "Power'", "Factor", "Atom",
-        ];
+        let formatted_terminals = terminals
+            .iter()
+            .map(|t| format!("{}", t))
+            .collect::<Vec<_>>();
+        let terminal_strings = formatted_terminals.iter().map(|s| s.as_str()).collect();
 
-        let productions = vec![
-            /* 0*/ ("Goal", vec!["Expr"]),
-            /* 1*/ ("Expr", vec!["Term", "Expr'"]),
-            /* 2*/ ("Expr'", vec!["+", "Term", "Expr'"]),
-            /* 3*/ ("Expr'", vec!["-", "Term", "Expr'"]),
-            /* 4*/ ("Expr'", vec![""]),
-            /* 5*/ ("Term", vec!["Power", "Term'"]),
-            /* 6*/ ("Term'", vec!["*", "Power", "Term'"]),
-            /* 7*/ ("Term'", vec!["/", "Power", "Term'"]),
-            /* 8*/ ("Term'", vec![""]),
-            /* 9*/ ("Power", vec!["Factor", "Power'"]),
-            /*10*/ ("Power'", vec!["^", "Factor", "Power'"]),
-            /*11*/ ("Power'", vec![""]),
-            /*12*/ ("Factor", vec!["(", "Expr", ")"]),
-            /*13*/ ("Factor", vec!["Atom"]),
-            /*14*/ ("Factor", vec!["-", "Atom"]),
-            /*15*/ ("Atom", vec!["num"]),
-            /*16*/ ("Atom", vec!["name"]),
-            /*17*/ ("Atom", vec!["float"]),
-        ];
+        let formatted_non_terminals = non_terminals
+            .iter()
+            .map(|nt| format!("{}", nt))
+            .collect::<Vec<_>>();
+        let non_terminal_strings = formatted_non_terminals.iter().map(|s| s.as_str()).collect();
 
-        let first = compute_first_set(&terminals, &non_terminals, &productions);
+        let formatted_productions = productions
+            .iter()
+            .map(|(lhs, rhs)| {
+                (
+                    format!("{}", lhs),
+                    if rhs.is_empty() {
+                        vec!["".into()]
+                    } else {
+                        rhs.iter()
+                            .filter_map(|item| match item {
+                                Left(Reduction(_)) => None,
+                                Left(item) => Some(format!("{}", item)),
+                                Right(item) => Some(format!("{}", item)),
+                            })
+                            .collect::<Vec<_>>()
+                    },
+                )
+            })
+            .collect::<Vec<_>>();
+        let production_strings = formatted_productions
+            .iter()
+            .map(|(lhs, rhs)| (lhs.as_str(), rhs.iter().map(|s| s.as_str()).collect()))
+            .collect::<Vec<_>>();
 
-        let follow = compute_follow_set(&non_terminals, &productions, &first);
+        let first = compute_first_set(
+            &terminal_strings,
+            &non_terminal_strings,
+            &production_strings,
+        );
 
-        let lookup =
-            compute_lookup_table(&terminals, &non_terminals, &productions, &first, &follow);
-        Self { lookup }
+        let follow = compute_follow_set(&non_terminal_strings, &production_strings, &first);
+
+        let lookup = compute_lookup_table(
+            &terminal_strings,
+            &non_terminal_strings,
+            &production_strings,
+            &first,
+            &follow,
+        );
+        Self {
+            lookup,
+            rules,
+            terminals,
+            non_terminals,
+        }
     }
 
     fn get_focus_number(&self, non_terminal: &NonTerminal) -> Option<usize> {
-        let number = match non_terminal {
-            NonTerminal::Goal => 0,
-            NonTerminal::Expr => 1,
-            NonTerminal::ExprPrime => 2,
-            NonTerminal::Term => 3,
-            NonTerminal::TermPrime => 4,
-            NonTerminal::Power => 5,
-            NonTerminal::PowerPrime => 6,
-            NonTerminal::Factor => 7,
-            NonTerminal::Atom => 8,
-            NonTerminal::Reduction(_) => {
-                warn!("trying to assign a focust number to a reduction operation!");
-                return None;
-            }
-        };
-        trace!("Assigning {:?} the focus number {}", non_terminal, number);
-        Some(number)
+        let d = discriminant(non_terminal);
+        if let NonTerminal::Reduction(_) = non_terminal {
+            warn!("trying to assign a focus number to a reduction operation!");
+            None
+        } else if let Some(number) = self.non_terminals.iter().position(|x| discriminant(x) == d) {
+            trace!("Assigning {} the focus number {}", non_terminal, number);
+            Some(number)
+        } else {
+            warn!(
+                "trying to assign a focus number to the unknown non-terminal {}",
+                non_terminal
+            );
+            None
+        }
     }
 
     fn get_word_number(&self, terminal: &Token) -> Option<usize> {
-        let number = match terminal {
-            Token::EOF => 0,
-            Token::Plus(_) => 1,
-            Token::Minus(_) => 2,
-            Token::Star(_) => 3,
-            Token::Div(_) => 4,
-            Token::Pow(_) => 5,
-            Token::LParen(_) => 6,
-            Token::RParen(_) => 7,
-            Token::Identifier(_) => 8,
-            Token::Number(_) => 9,
-            Token::Float(_) => 10,
-            unexpected => {
-                warn!("Trying to assign a word number to {}", unexpected);
-                return None;
-            }
+        let d = discriminant(terminal);
+        let number = if let Token::EOF = terminal {
+            0
+        } else if let Some(number) = self.terminals.iter().position(|x| discriminant(x) == d) {
+            number + 1
+        } else {
+            warn!("Trying to assign a word number to {}", terminal);
+            return None;
         };
         trace!("Assigning {} the word number {}", terminal, number);
         Some(number)
     }
 
     pub(super) fn at(&self, focus: &NonTerminal, word: &Token) -> Option<Vec<ProductionItem>> {
-        use NonTerminal::*;
-        use Token::*;
-        match self
+        let &index = self
             .lookup
-            .get(&(self.get_focus_number(focus)?, self.get_word_number(word)?))?
-        {
-            0 => {
-                trace!("Running rule 0");
-                Some(vec![Left(Expr)])
-            }
-            1 => {
-                trace!("Running rule 1");
-                Some(vec![Left(Term), Left(ExprPrime)])
-            }
-            2 => {
-                trace!("Running rule 2");
-                Some(vec![
-                    Right(Plus(<_>::default())),
-                    Left(Term),
-                    Left(Reduction(reduce_binary_op)),
-                    Left(ExprPrime),
-                ])
-            }
-            3 => {
-                trace!("Running rule 3");
-                Some(vec![
-                    Right(Minus(<_>::default())),
-                    Left(Term),
-                    Left(Reduction(reduce_binary_op)),
-                    Left(ExprPrime),
-                ])
-            }
-            4 => {
-                trace!("Running rule 4");
-                Some(vec![])
-            }
-            5 => {
-                trace!("Running rule 5");
-                Some(vec![Left(Power), Left(TermPrime)])
-            }
-            6 => {
-                trace!("Running rule 6");
-                Some(vec![
-                    Right(Star(<_>::default())),
-                    Left(Power),
-                    Left(Reduction(reduce_binary_op)),
-                    Left(TermPrime),
-                ])
-            }
-            7 => {
-                trace!("Running rule 7");
-                Some(vec![
-                    Right(Div(<_>::default())),
-                    Left(Power),
-                    Left(Reduction(reduce_binary_op)),
-                    Left(TermPrime),
-                ])
-            }
-            8 => {
-                trace!("Running rule 8");
-                Some(vec![])
-            }
-            9 => {
-                trace!("Running rule 9");
-                Some(vec![Left(Factor), Left(PowerPrime)])
-            }
-            10 => {
-                trace!("Running rule 10");
-                Some(vec![
-                    Right(Pow(<_>::default())),
-                    Left(Factor),
-                    Left(Reduction(reduce_binary_op)),
-                    Left(PowerPrime),
-                ])
-            }
-            11 => {
-                trace!("Running rule 11");
-                Some(vec![])
-            }
-            12 => {
-                trace!("Running rule 12");
-                Some(vec![
-                    Right(LParen(<_>::default())),
-                    Left(Expr),
-                    Right(RParen(<_>::default())),
-                    Left(Reduction(reduce_parenthetical)),
-                ])
-            }
-            13 => {
-                trace!("Running rule 13");
-                Some(vec![Left(Atom)])
-            }
-            14 => {
-                trace!("Running rule 14");
-                Some(vec![
-                    Right(Minus(<_>::default())),
-                    Left(Atom),
-                    Left(Reduction(reduce_unary_operator)),
-                ])
-            }
-            15 => {
-                trace!("Running rule 15");
-                Some(vec![
-                    Right(Number(<_>::default())),
-                    Left(Reduction(reduce_value)),
-                ])
-            }
-            16 => {
-                trace!("Running rule 16");
-                Some(vec![
-                    Right(Identifier(<_>::default())),
-                    Left(Reduction(reduce_value)),
-                ])
-            }
-            17 => {
-                trace!("Running rule 17");
-                Some(vec![
-                    Right(Float(<_>::default())),
-                    Left(Reduction(reduce_value)),
-                ])
-            }
-            _ => {
-                trace!("Not running any rule!");
-                None
-            }
-        }
+            .get(&(self.get_focus_number(focus)?, self.get_word_number(word)?))?;
+        trace!("Runnin rule {}", index);
+        self.rules.get(index).map(|x| x.clone())
     }
 }
 
