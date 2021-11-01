@@ -51,9 +51,9 @@ fn main() {
     if let Some(expression) = matches.value_of("expression") {
         let scan = Scanner::from_text(expression);
         match parse(scan) {
-            Ok(result) => println!("valid: {}", result),
+            Ok(result) => println!("{}: {}", "valid".green(), result),
             Err(error) => {
-                eprintln!("invalid: {}", error);
+                eprintln!("{}: {}", "invalid".red(), error);
                 std::process::exit(1);
             }
         }
