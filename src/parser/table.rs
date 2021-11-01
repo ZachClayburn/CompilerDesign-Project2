@@ -296,7 +296,7 @@ fn compute_first_set<'a>(
         for (non_terminal, items) in productions {
             let k = items.len() - 1;
             let mut rhs = first.get(items[0]).unwrap() - &HashSet::from([""]);
-            for i in 0..(k + 1) {
+            for i in 0..=k {
                 if i + 1 <= k {
                     rhs = &rhs
                         | &(match first.get(items[i]) {
