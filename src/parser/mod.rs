@@ -426,4 +426,17 @@ mod test {
         let expected = Variable("X".into());
         assert_eq!(out, expected);
     }
+
+    #[test]
+    fn integer_power_overflow_fails_gracefully() {
+        use ExpressionIr::*;
+        let scan = Scanner::from_text("8^88");
+        let out = parse(scan).unwrap();
+        let expected = BinaryOperation(
+            Box::new(NumberLiteral(8)),
+            Operator::Power,
+            Box::new(NumberLiteral(88))
+            );
+        assert_eq!(out, expected);
+    }
 }

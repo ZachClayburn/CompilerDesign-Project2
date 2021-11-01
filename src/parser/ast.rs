@@ -1,4 +1,5 @@
 use super::{Either, Left, Result, Right, Token};
+use num::checked_pow;
 use std::convert::TryInto;
 use std::fmt::Display;
 
@@ -103,7 +104,13 @@ pub fn reduce_binary_op(mut stack: Vec<ValueItem>) -> Result<Vec<ValueItem>> {
             Operator::Plus => NumberLiteral(lhs + rhs),
             Operator::Minus => NumberLiteral(lhs - rhs),
             Operator::Multiply => NumberLiteral(lhs * rhs),
-            Operator::Power => NumberLiteral(lhs.pow(rhs.try_into()?)),
+            Operator::Power => {
+                checked_pow(lhs, rhs.try_into()?).map_or_else(|| BinaryOperation(
+                        Box::new(NumberLiteral(lhs)),
+                        Operator::Power,
+                        Box::new(NumberLiteral(rhs)),
+                ), |result|NumberLiteral(result))
+            }
             Operator::Divide if rhs != 0 => NumberLiteral(lhs / rhs),
             op => BinaryOperation(
                 Box::new(NumberLiteral(lhs)),
