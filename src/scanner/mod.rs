@@ -13,6 +13,7 @@ pub use tokens::{Token, TokenInfo};
 pub struct Scanner {
     raw_text: Peekable<IntoIter<char>>,
     location: Location,
+    done: bool,
 }
 
 #[derive(Debug, PartialEq)]
@@ -22,16 +23,11 @@ pub struct ScannerError {
 }
 
 impl Scanner {
-    fn collect_text(text: &str) -> Peekable<IntoIter<char>> {
-        let mut vec = text.chars().collect::<Vec<_>>();
-        vec.append(&mut vec![' ', 'E', 'O', 'F']);
-        vec.into_iter().peekable()
-    }
-
     pub fn from_text(text: &str) -> Peekable<Self> {
         Self {
-            raw_text: Self::collect_text(text),
+            raw_text: text.chars().collect::<Vec<_>>().into_iter().peekable(),
             location: Location::default(),
+            done: false,
         }
         .peekable()
     }
@@ -52,6 +48,26 @@ impl Iterator for Scanner {
     type Item = Result<Token>;
 
     fn next(&mut self) -> Option<Self::Item> {
+        if self.done {
+            None
+        } else {
+            Some(Ok(match self.next_impl() {
+                Some(Ok(token)) => token,
+                None => {
+                    self.done = true;
+                    Token::EOF
+                }
+                Some(Err(error)) => {
+                    self.done = true;
+                    return Some(Err(error));
+                }
+            }))
+        }
+    }
+}
+
+impl Scanner {
+    fn next_impl(&mut self) -> Option<<Self as Iterator>::Item> {
         loop {
             let mut c = self.raw_text.next()?;
             self.location.next_col();
@@ -164,6 +180,7 @@ impl Iterator for Scanner {
                             stop: self.location,
                         }))
                     } else {
+                        self.done = true;
                         Err(ScannerError {
                             message: "Unterminated string!".into(),
                             location: start,
@@ -245,7 +262,6 @@ impl Iterator for Scanner {
                         "num" => Ok(Token::Num(start)),
                         "string" => Ok(Token::StringKeyWord(start)),
                         "return" => Ok(Token::Return(start)),
-                        "EOF" if self.raw_text.peek().is_none() => Ok(Token::EOF),
                         _ => Ok(Token::Identifier(TokenInfo {
                             content,
                             start,
@@ -514,12 +530,6 @@ mod tests {
                 message: "Invalid Number".into(),
                 location: Location { line: 1, column: 7 },
             }),
-            Ok(Identifier(TokenInfo {
-                content: "a".into(),
-                start: Location { line: 1, column: 9 },
-                stop: Location { line: 1, column: 9 },
-            })),
-            Ok(EOF),
         ];
         assert_eq!(tokens, expected);
     }
@@ -652,13 +662,10 @@ mod tests {
     fn plus_minus_is_rejected() {
         let scan = Scanner::from_text("+-");
         let tokens = scan.collect::<Vec<_>>();
-        let expected = vec![
-            Err(ScannerError {
-                message: "+- is not allowed in the language!".into(),
-                location: Location { line: 1, column: 1 },
-            }),
-            Ok(EOF),
-        ];
+        let expected = vec![Err(ScannerError {
+            message: "+- is not allowed in the language!".into(),
+            location: Location { line: 1, column: 1 },
+        })];
         assert_eq!(tokens, expected);
     }
 
@@ -694,12 +701,21 @@ mod tests {
                 message: "Invalid Number".into(),
                 location: Location { line: 1, column: 1 },
             }),
-            Ok(Identifier(TokenInfo {
-                content: "a".into(),
-                start: Location { line: 1, column: 6 },
-                stop: Location { line: 1, column: 6 },
-            })),
-            Ok(EOF),
+        ];
+        assert_eq!(tokens, expected);
+    }
+
+    #[test]
+    fn correctly_handles_eof_with_trailing_comment() {
+        let scan = Scanner::from_text("X//");
+        let tokens = scan.map(|x| x.unwrap()).collect::<Vec<_>>();
+        let expected = vec![
+            Identifier(TokenInfo {
+                content: "X".into(),
+                start: Location { line: 1, column: 1 },
+                stop: Location { line: 1, column: 1 },
+            }),
+            EOF,
         ];
         assert_eq!(tokens, expected);
     }

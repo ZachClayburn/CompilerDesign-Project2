@@ -67,19 +67,17 @@ impl From<TryFromIntError> for ParseError {
 }
 
 pub fn parse(mut scan: Peekable<Scanner>) -> Result<ExpressionIr> {
-    if let None = scan.peek() {
-        return Err("No usable tokens in the input!".into());
-    }
     let mut production_stack = vec![Right(Token::EOF), Left(NonTerminal::Goal)];
     let mut value_stack: Vec<ValueItem> = Vec::new();
     let table = Table::new();
 
-    'outer: for item in scan {
+    'outer: while let Some(item) = scan.next() {
         let word = item?;
+        let next_word = scan.peek();
         loop {
             debug!(
-                "\nStack:{:?}\nValueStack:{:?}\nWord: {}",
-                production_stack, value_stack, word
+                "\nStack:{:?}\nValueStack:{:?}\nWord: {}\nnext Word: {:?}",
+                production_stack, value_stack, word, next_word
             );
             match production_stack.last().unwrap() {
                 Right(Token::EOF) if word == Token::EOF => match value_stack.len() {
@@ -418,5 +416,14 @@ mod test {
     fn parsing_lone_comment_fails_gracefully() {
         let scan = Scanner::from_text("//");
         assert!(parse(scan).is_err());
+    }
+
+    #[test]
+    fn trailing_comment_doesnt_cause_failure() {
+        use ExpressionIr::*;
+        let scan = Scanner::from_text("X//");
+        let out = parse(scan).unwrap();
+        let expected = Variable("X".into());
+        assert_eq!(out, expected);
     }
 }
