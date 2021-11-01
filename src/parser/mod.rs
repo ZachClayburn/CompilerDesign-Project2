@@ -66,7 +66,10 @@ impl From<TryFromIntError> for ParseError {
     }
 }
 
-pub fn parse(scan: Peekable<Scanner>) -> Result<ExpressionIr> {
+pub fn parse(mut scan: Peekable<Scanner>) -> Result<ExpressionIr> {
+    if let None = scan.peek() {
+        return Err("No usable tokens in the input!".into());
+    }
     let mut production_stack = vec![Right(Token::EOF), Left(NonTerminal::Goal)];
     let mut value_stack: Vec<ValueItem> = Vec::new();
     let table = Table::new();
@@ -409,5 +412,11 @@ mod test {
         let out = parse(scan).unwrap();
         let expected = FloatLiteral(8.0);
         assert_eq!(out, expected);
+    }
+
+    #[test]
+    fn parsing_lone_comment_fails_gracefully() {
+        let scan = Scanner::from_text("//");
+        assert!(parse(scan).is_err());
     }
 }
