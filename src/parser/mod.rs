@@ -6,7 +6,7 @@ use ast::{ExpressionIr, ValueItem};
 use either::Either::{self, Left, Right};
 use log::debug;
 use std::fmt::Display;
-use std::num::{ParseFloatError, ParseIntError};
+use std::num::{ParseFloatError, ParseIntError, TryFromIntError};
 use std::{iter::Peekable, mem::discriminant};
 use table::{NonTerminal, Table};
 
@@ -56,6 +56,12 @@ impl From<ParseIntError> for ParseError {
 
 impl From<ParseFloatError> for ParseError {
     fn from(err: ParseFloatError) -> Self {
+        err.to_string().into()
+    }
+}
+
+impl From<TryFromIntError> for ParseError {
+    fn from(err: TryFromIntError) -> Self {
         err.to_string().into()
     }
 }
@@ -291,7 +297,8 @@ mod test {
 
     #[test]
     fn fails_when_number_is_too_large() {
-        let scan = Scanner::from_text(format!("{}", (i32::MAX as i64) + 1).as_str());
+        // TODO Change this back to assuming i32 when I fix the integer type I use
+        let scan = Scanner::from_text(format!("{}", (i64::MAX as i128) + 1).as_str());
         assert!(parse(scan).is_err());
     }
 
@@ -383,6 +390,24 @@ mod test {
             Operator::Power,
             Box::new(Variable("b".into())),
         );
+        assert_eq!(out, expected);
+    }
+
+    #[test]
+    fn integer_exponents_parse_correctly() {
+        use ExpressionIr::*;
+        let scan = Scanner::from_text("2^3");
+        let out = parse(scan).unwrap();
+        let expected = NumberLiteral(8);
+        assert_eq!(out, expected);
+    }
+
+    #[test]
+    fn float_exponents_parse_correctly() {
+        use ExpressionIr::*;
+        let scan = Scanner::from_text("2.0^3.0");
+        let out = parse(scan).unwrap();
+        let expected = FloatLiteral(8.0);
         assert_eq!(out, expected);
     }
 }

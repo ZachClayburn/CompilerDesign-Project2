@@ -1,4 +1,5 @@
 use super::{Either, Left, Result, Right, Token};
+use std::convert::TryInto;
 use std::fmt::Display;
 
 #[derive(Debug, PartialEq, Eq)]
@@ -28,7 +29,7 @@ impl Display for Operator {
 
 #[derive(Debug, PartialEq)]
 pub enum ExpressionIr {
-    NumberLiteral(i32),
+    NumberLiteral(i64), // TODO Switch this back to i32 when I can gracefully fail at exponetiation
     FloatLiteral(f32),
     Variable(String),
     BinaryOperation(Box<Self>, Operator, Box<Self>),
@@ -102,7 +103,7 @@ pub fn reduce_binary_op(mut stack: Vec<ValueItem>) -> Result<Vec<ValueItem>> {
             Operator::Plus => NumberLiteral(lhs + rhs),
             Operator::Minus => NumberLiteral(lhs - rhs),
             Operator::Multiply => NumberLiteral(lhs * rhs),
-            Operator::Power => todo!(),
+            Operator::Power => NumberLiteral(lhs.pow(rhs.try_into()?)),
             Operator::Divide if rhs != 0 => NumberLiteral(lhs / rhs),
             op => BinaryOperation(
                 Box::new(NumberLiteral(lhs)),
@@ -115,7 +116,7 @@ pub fn reduce_binary_op(mut stack: Vec<ValueItem>) -> Result<Vec<ValueItem>> {
             Operator::Minus => FloatLiteral(lhs - rhs),
             Operator::Multiply => FloatLiteral(lhs * rhs),
             Operator::Divide => FloatLiteral(lhs / rhs),
-            Operator::Power => todo!(),
+            Operator::Power => FloatLiteral(lhs.powf(rhs)), // TODO Gracefully fail at overflow
         },
         (lhs, rhs) => BinaryOperation(Box::new(lhs), op, Box::new(rhs)),
     };
