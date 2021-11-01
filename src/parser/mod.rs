@@ -439,4 +439,17 @@ mod test {
             );
         assert_eq!(out, expected);
     }
+
+    #[test]
+    fn integer_multiply_overflow_fails_gracefully() {
+        use ExpressionIr::*;
+        let scan = Scanner::from_text("20^8*20^8");
+        let out = parse(scan).unwrap();
+        let expected = BinaryOperation(
+            Box::new(NumberLiteral(25600000000)),
+            Operator::Multiply,
+            Box::new(NumberLiteral(25600000000))
+            );
+        assert_eq!(out, expected);
+    }
 }

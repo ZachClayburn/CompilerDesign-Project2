@@ -103,14 +103,26 @@ pub fn reduce_binary_op(mut stack: Vec<ValueItem>) -> Result<Vec<ValueItem>> {
         (NumberLiteral(lhs), NumberLiteral(rhs)) => match op {
             Operator::Plus => NumberLiteral(lhs + rhs),
             Operator::Minus => NumberLiteral(lhs - rhs),
-            Operator::Multiply => NumberLiteral(lhs * rhs),
-            Operator::Power => {
-                checked_pow(lhs, rhs.try_into()?).map_or_else(|| BinaryOperation(
+            Operator::Multiply => lhs.checked_mul(rhs).map_or_else(
+                || {
+                    BinaryOperation(
+                        Box::new(NumberLiteral(lhs)),
+                        Operator::Multiply,
+                        Box::new(NumberLiteral(rhs)),
+                    )
+                },
+                |result| NumberLiteral(result),
+            ),
+            Operator::Power => checked_pow(lhs, rhs.try_into()?).map_or_else(
+                || {
+                    BinaryOperation(
                         Box::new(NumberLiteral(lhs)),
                         Operator::Power,
                         Box::new(NumberLiteral(rhs)),
-                ), |result|NumberLiteral(result))
-            }
+                    )
+                },
+                |result| NumberLiteral(result),
+            ),
             Operator::Divide if rhs != 0 => NumberLiteral(lhs / rhs),
             op => BinaryOperation(
                 Box::new(NumberLiteral(lhs)),
@@ -123,7 +135,7 @@ pub fn reduce_binary_op(mut stack: Vec<ValueItem>) -> Result<Vec<ValueItem>> {
             Operator::Minus => FloatLiteral(lhs - rhs),
             Operator::Multiply => FloatLiteral(lhs * rhs),
             Operator::Divide => FloatLiteral(lhs / rhs),
-            Operator::Power => FloatLiteral(lhs.powf(rhs)), // TODO Gracefully fail at overflow
+            Operator::Power => FloatLiteral(lhs.powf(rhs)),
         },
         (lhs, rhs) => BinaryOperation(Box::new(lhs), op, Box::new(rhs)),
     };
