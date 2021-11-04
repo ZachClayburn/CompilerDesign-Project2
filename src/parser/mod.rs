@@ -1,70 +1,16 @@
 mod ast;
+pub mod errors;
 mod table;
 
 use crate::scanner::*;
 use ast::{ExpressionIr, ValueItem};
 use either::Either::{self, Left, Right};
+pub use errors::ParseError;
 use log::debug;
-use std::fmt::Display;
-use std::num::{ParseFloatError, ParseIntError, TryFromIntError};
 use std::{iter::Peekable, mem::discriminant};
 use table::{NonTerminal, Table};
 
 pub type Result<T> = std::result::Result<T, ParseError>;
-
-#[derive(Debug, PartialEq, Eq)]
-pub struct ParseError {
-    message: String,
-}
-
-impl Display for ParseError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.message)
-    }
-}
-
-impl From<&str> for ParseError {
-    fn from(message: &str) -> Self {
-        Self {
-            message: message.into(),
-        }
-    }
-}
-
-impl From<String> for ParseError {
-    fn from(message: String) -> Self {
-        Self { message }
-    }
-}
-
-impl From<ScannerError> for ParseError {
-    fn from(error: ScannerError) -> Self {
-        Self {
-            message: format!(
-                "[{}:{}] {}",
-                error.location.line, error.location.column, error.message
-            ),
-        }
-    }
-}
-
-impl From<ParseIntError> for ParseError {
-    fn from(err: ParseIntError) -> Self {
-        err.to_string().into()
-    }
-}
-
-impl From<ParseFloatError> for ParseError {
-    fn from(err: ParseFloatError) -> Self {
-        err.to_string().into()
-    }
-}
-
-impl From<TryFromIntError> for ParseError {
-    fn from(err: TryFromIntError) -> Self {
-        err.to_string().into()
-    }
-}
 
 pub fn parse(mut scan: Peekable<Scanner>) -> Result<ExpressionIr> {
     let mut production_stack = vec![Right(Token::EOF), Left(NonTerminal::Goal)];
@@ -435,8 +381,8 @@ mod test {
         let expected = BinaryOperation(
             Box::new(NumberLiteral(8)),
             Operator::Power,
-            Box::new(NumberLiteral(88))
-            );
+            Box::new(NumberLiteral(88)),
+        );
         assert_eq!(out, expected);
     }
 
@@ -448,8 +394,8 @@ mod test {
         let expected = BinaryOperation(
             Box::new(NumberLiteral(25600000000)),
             Operator::Multiply,
-            Box::new(NumberLiteral(25600000000))
-            );
+            Box::new(NumberLiteral(25600000000)),
+        );
         assert_eq!(out, expected);
     }
 }
