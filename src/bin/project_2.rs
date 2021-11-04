@@ -1,7 +1,5 @@
-mod parser;
-mod scanner;
-
 use clap::{App, Arg, ArgGroup};
+use compiler_design_project_2::*;
 use colored::*;
 use parser::parse;
 use scanner::Scanner;

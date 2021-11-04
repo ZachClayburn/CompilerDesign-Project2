@@ -17,3 +17,8 @@ num = "0.4.0"
 [dev-dependencies]
 indoc = "1.0.3"
 pretty_assertions = "1.0.0"
+
+[[bin]]
+name = "project_2"
+path = "src/bin/project_2.rs"
+test = true
