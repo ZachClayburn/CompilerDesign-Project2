@@ -29,7 +29,7 @@ impl Display for Operator {
 }
 
 #[derive(Debug, PartialEq)]
-pub enum ExpressionIr {
+pub enum Expression {
     NumberLiteral(i64), // TODO Switch this back to i32 when I can gracefully fail at exponetiation
     FloatLiteral(f32),
     Variable(String),
@@ -37,35 +37,35 @@ pub enum ExpressionIr {
     UnaryOperation(Operator, Box<Self>),
 }
 
-impl Display for ExpressionIr {
+impl Display for Expression {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            ExpressionIr::NumberLiteral(num) => write!(f, "{}", num),
-            ExpressionIr::FloatLiteral(num) => write!(f, "{}", num),
-            ExpressionIr::Variable(name) => write!(f, "{}", name),
-            ExpressionIr::BinaryOperation(lhs, op, rhs) => write!(f, "({} {} {})", lhs, op, rhs),
-            ExpressionIr::UnaryOperation(op, exp) => write!(f, "{} {}", op, exp),
+            Expression::NumberLiteral(num) => write!(f, "{}", num),
+            Expression::FloatLiteral(num) => write!(f, "{}", num),
+            Expression::Variable(name) => write!(f, "{}", name),
+            Expression::BinaryOperation(lhs, op, rhs) => write!(f, "({} {} {})", lhs, op, rhs),
+            Expression::UnaryOperation(op, exp) => write!(f, "{} {}", op, exp),
         }
     }
 }
 
-pub(super) type ValueItem = Either<ExpressionIr, Token>;
+pub(super) type ValueItem = Either<Expression, Token>;
 pub(super) type ReductionOp = fn(Vec<ValueItem>) -> Result<Vec<ValueItem>>;
 
 pub fn reduce_value(mut stack: Vec<ValueItem>) -> Result<Vec<ValueItem>> {
     match stack.pop() {
         Some(Right(Token::Number(info))) => {
             let number = info.content.parse()?;
-            stack.push(Left(ExpressionIr::NumberLiteral(number)));
+            stack.push(Left(Expression::NumberLiteral(number)));
             Ok(stack)
         }
         Some(Right(Token::Identifier(info))) => {
-            stack.push(Left(ExpressionIr::Variable(info.content)));
+            stack.push(Left(Expression::Variable(info.content)));
             Ok(stack)
         }
         Some(Right(Token::Float(info))) => {
             let number = info.content.parse()?;
-            stack.push(Left(ExpressionIr::FloatLiteral(number)));
+            stack.push(Left(Expression::FloatLiteral(number)));
             Ok(stack)
         }
         Some(unexpected) => Err(format!(
@@ -79,7 +79,7 @@ pub fn reduce_value(mut stack: Vec<ValueItem>) -> Result<Vec<ValueItem>> {
 
 pub fn reduce_binary_op(mut stack: Vec<ValueItem>) -> Result<Vec<ValueItem>> {
     use super::Token::*;
-    use ExpressionIr::*;
+    use Expression::*;
     let rhs = match stack.pop() {
         Some(Left(expr)) => expr,
         Some(bad) => return Err(format!("Expected an expression, found {}", bad).into()),
@@ -177,9 +177,9 @@ pub fn reduce_unary_operator(mut stack: Vec<ValueItem>) -> Result<Vec<ValueItem>
     };
 
     stack.push(Left(match expr {
-        ExpressionIr::NumberLiteral(value) => ExpressionIr::NumberLiteral(-value),
-        ExpressionIr::FloatLiteral(value) => ExpressionIr::FloatLiteral(-value),
-        exp => ExpressionIr::UnaryOperation(Operator::Minus, Box::new(exp)),
+        Expression::NumberLiteral(value) => Expression::NumberLiteral(-value),
+        Expression::FloatLiteral(value) => Expression::FloatLiteral(-value),
+        exp => Expression::UnaryOperation(Operator::Minus, Box::new(exp)),
     }));
     Ok(stack)
 }
