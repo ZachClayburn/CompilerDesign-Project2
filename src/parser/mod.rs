@@ -12,8 +12,49 @@ use table::{NonTerminal, Table};
 
 pub type Result<T> = std::result::Result<T, ParseError>;
 
-pub fn parse(mut scan: Peekable<Scanner>) -> Result<ExpressionIr> {
-    let mut production_stack = vec![Right(Token::EOF), Left(NonTerminal::Goal)];
+pub struct ParseArgs {
+    scan: Peekable<Scanner>,
+    start: NonTerminal,
+    end: Token,
+}
+
+impl Default for ParseArgs {
+    fn default() -> Self {
+        Self {
+            scan: Scanner::from_text(""),
+            start: NonTerminal::Goal,
+            end: Token::EOF,
+        }
+    }
+}
+
+impl From<Peekable<Scanner>> for ParseArgs {
+    fn from(scan: Peekable<Scanner>) -> Self {
+        Self {
+            scan,
+            ..Self::default()
+        }
+    }
+}
+
+#[cfg(test)]
+impl From<(Peekable<Scanner>, NonTerminal, Token)> for ParseArgs {
+    fn from(tuple: (Peekable<Scanner>, NonTerminal, Token)) -> Self {
+        let (scan, start, end) = tuple;
+        Self { scan, start, end }
+    }
+}
+
+pub fn parse<A>(args: A) -> Result<ExpressionIr>
+where
+    A: Into<ParseArgs>,
+{
+    let ParseArgs {
+        mut scan,
+        start,
+        end,
+    } = args.into();
+    let mut production_stack = vec![Right(end), Left(start)];
     let mut value_stack: Vec<ValueItem> = Vec::new();
     let table = Table::new();
 
@@ -85,7 +126,7 @@ mod test {
     #[test]
     fn parse_errors_on_bad_first_character() {
         let scan = Scanner::from_text("~");
-        let out = parse(scan);
+        let out = parse((scan, NonTerminal::Expr, Token::EOF));
         assert_eq!(
             out,
             Err(ParseError {
@@ -97,49 +138,49 @@ mod test {
     #[test]
     fn single_number_does_not_error() {
         let scan = Scanner::from_text("1");
-        assert!(parse(scan).is_ok());
+        assert!(parse((scan, NonTerminal::Expr, Token::EOF)).is_ok());
     }
 
     #[test]
     fn single_operation_does_not_error() {
         let scan = Scanner::from_text("1+1");
-        assert!(parse(scan).is_ok());
+        assert!(parse((scan, NonTerminal::Expr, Token::EOF)).is_ok());
     }
 
     #[test]
     fn operation_chain_does_not_error() {
         let scan = Scanner::from_text("a*b-c+d");
-        assert!(parse(scan).is_ok());
+        assert!(parse((scan, NonTerminal::Expr, Token::EOF)).is_ok());
     }
 
     #[test]
     fn parenthetical_number_does_not_error() {
         let scan = Scanner::from_text("(1)");
-        assert!(parse(scan).is_ok());
+        assert!(parse((scan, NonTerminal::Expr, Token::EOF)).is_ok());
     }
 
     #[test]
     fn operation_chain_with_parenthasese_does_not_error() {
         let scan = Scanner::from_text("1+(1-1)*1");
-        assert!(parse(scan).is_ok())
+        assert!(parse((scan, NonTerminal::Expr, Token::EOF)).is_ok())
     }
 
     #[test]
     fn sequential_numbers_error() {
         let scan = Scanner::from_text("1 1");
-        assert!(parse(scan).is_err());
+        assert!(parse((scan, NonTerminal::Expr, Token::EOF)).is_err());
     }
 
     #[test]
     fn trailing_operator_errors() {
         let scan = Scanner::from_text("1 + 1 -");
-        assert!(parse(scan).is_err());
+        assert!(parse((scan, NonTerminal::Expr, Token::EOF)).is_err());
     }
 
     #[test]
     fn single_number_parses_correctly() {
         let scan = Scanner::from_text("1");
-        let out = parse(scan).unwrap();
+        let out = parse((scan, NonTerminal::Expr, Token::EOF)).unwrap();
         let expected = ExpressionIr::NumberLiteral(1);
         assert_eq!(out, expected);
     }
@@ -147,7 +188,7 @@ mod test {
     #[test]
     fn single_variable_parses_correctly() {
         let scan = Scanner::from_text("a");
-        let out = parse(scan).unwrap();
+        let out = parse((scan, NonTerminal::Expr, Token::EOF)).unwrap();
         let expected = ExpressionIr::Variable("a".into());
         assert_eq!(out, expected);
     }
@@ -156,7 +197,7 @@ mod test {
     fn single_addition_parses_correctly() {
         use ExpressionIr::*;
         let scan = Scanner::from_text("a+b");
-        let out = parse(scan).unwrap();
+        let out = parse((scan, NonTerminal::Expr, Token::EOF)).unwrap();
         let expected = BinaryOperation(
             Box::new(Variable("a".into())),
             Operator::Plus,
@@ -169,7 +210,7 @@ mod test {
     fn single_subtraction_parses_correctly() {
         use ExpressionIr::*;
         let scan = Scanner::from_text("a-b");
-        let out = parse(scan).unwrap();
+        let out = parse((scan, NonTerminal::Expr, Token::EOF)).unwrap();
         let expected = BinaryOperation(
             Box::new(Variable("a".into())),
             Operator::Minus,
@@ -182,7 +223,7 @@ mod test {
     fn single_multiplication_parses_correctly() {
         use ExpressionIr::*;
         let scan = Scanner::from_text("a*b");
-        let out = parse(scan).unwrap();
+        let out = parse((scan, NonTerminal::Expr, Token::EOF)).unwrap();
         let expected = BinaryOperation(
             Box::new(Variable("a".into())),
             Operator::Multiply,
@@ -195,7 +236,7 @@ mod test {
     fn single_division_parses_correctly() {
         use ExpressionIr::*;
         let scan = Scanner::from_text("a/b");
-        let out = parse(scan).unwrap();
+        let out = parse((scan, NonTerminal::Expr, Token::EOF)).unwrap();
         let expected = BinaryOperation(
             Box::new(Variable("a".into())),
             Operator::Divide,
@@ -208,7 +249,7 @@ mod test {
     fn operation_chain_parses_correctly() {
         use ExpressionIr::*;
         let scan = Scanner::from_text("a*b-c+d");
-        let out = parse(scan).unwrap();
+        let out = parse((scan, NonTerminal::Expr, Token::EOF)).unwrap();
         let expected = BinaryOperation(
             Box::new(BinaryOperation(
                 Box::new(BinaryOperation(
@@ -229,7 +270,7 @@ mod test {
     fn parenthetical_variable_parses_correctly() {
         use ExpressionIr::*;
         let scan = Scanner::from_text("(a)");
-        let out = parse(scan).unwrap();
+        let out = parse((scan, NonTerminal::Expr, Token::EOF)).unwrap();
         let expected = Variable("a".into());
         assert_eq!(out, expected);
     }
@@ -237,7 +278,7 @@ mod test {
     #[test]
     fn literal_expressions_can_collapse() {
         let scan = Scanner::from_text("2*3-4+5");
-        let out = parse(scan).unwrap();
+        let out = parse((scan, NonTerminal::Expr, Token::EOF)).unwrap();
         let expected = ExpressionIr::NumberLiteral(7);
         assert_eq!(out, expected);
     }
@@ -246,13 +287,13 @@ mod test {
     fn fails_when_number_is_too_large() {
         // TODO Change this back to assuming i32 when I fix the integer type I use
         let scan = Scanner::from_text(format!("{}", (i64::MAX as i128) + 1).as_str());
-        assert!(parse(scan).is_err());
+        assert!(parse((scan, NonTerminal::Expr, Token::EOF)).is_err());
     }
 
     #[test]
     fn expressions_format_correctly() {
         let scan = Scanner::from_text("a*b+c/d-(e)");
-        let out = format!("{}", parse(scan).unwrap());
+        let out = format!("{}", parse((scan, NonTerminal::Expr, Token::EOF)).unwrap());
         let expected = "(((a * b) + (c / d)) - e)";
         assert_eq!(out, expected);
     }
@@ -261,7 +302,7 @@ mod test {
     fn literal_division_by_zero_does_not_panic() {
         use ExpressionIr::*;
         let scan = Scanner::from_text("1/0");
-        let out = parse(scan).unwrap();
+        let out = parse((scan, NonTerminal::Expr, Token::EOF)).unwrap();
         let expected = BinaryOperation(
             Box::new(NumberLiteral(1)),
             Operator::Divide,
@@ -274,7 +315,7 @@ mod test {
     fn negative_numbers_parse_correctly() {
         use ExpressionIr::*;
         let scan = Scanner::from_text("-1");
-        let out = parse(scan).unwrap();
+        let out = parse((scan, NonTerminal::Expr, Token::EOF)).unwrap();
         let expected = NumberLiteral(-1);
         assert_eq!(out, expected);
     }
@@ -283,7 +324,7 @@ mod test {
     fn negative_variables_parse_correctly() {
         use ExpressionIr::*;
         let scan = Scanner::from_text("-a");
-        let out = parse(scan).unwrap();
+        let out = parse((scan, NonTerminal::Expr, Token::EOF)).unwrap();
         let expected = UnaryOperation(Operator::Minus, Box::new(Variable("a".into())));
         assert_eq!(out, expected);
     }
@@ -291,20 +332,20 @@ mod test {
     #[test]
     fn minus_adjacent_to_another_minus_fails() {
         let scan = Scanner::from_text("1--1");
-        assert!(parse(scan).is_err());
+        assert!(parse((scan, NonTerminal::Expr, Token::EOF)).is_err());
     }
 
     #[test]
     fn minus_adjacent_to_plus_fails() {
         let scan = Scanner::from_text("1+-1");
-        assert!(parse(scan).is_err());
+        assert!(parse((scan, NonTerminal::Expr, Token::EOF)).is_err());
     }
 
     #[test]
     fn single_float_parses_correctly() {
         use ExpressionIr::*;
         let scan = Scanner::from_text("12.34");
-        let out = parse(scan).unwrap();
+        let out = parse((scan, NonTerminal::Expr, Token::EOF)).unwrap();
         let expected = FloatLiteral(12.34);
         assert_eq!(out, expected);
     }
@@ -313,7 +354,7 @@ mod test {
     fn floating_point_numbers_can_collapse() {
         use ExpressionIr::*;
         let scan = Scanner::from_text("1.0+2.0");
-        let out = parse(scan).unwrap();
+        let out = parse((scan, NonTerminal::Expr, Token::EOF)).unwrap();
         let expected = FloatLiteral(3.0);
         assert_eq!(out, expected);
     }
@@ -322,7 +363,7 @@ mod test {
     fn negative_floating_point_numbers_parse_correctly() {
         use ExpressionIr::*;
         let scan = Scanner::from_text("-12.34");
-        let out = parse(scan).unwrap();
+        let out = parse((scan, NonTerminal::Expr, Token::EOF)).unwrap();
         let expected = FloatLiteral(-12.34);
         assert_eq!(out, expected);
     }
@@ -331,7 +372,7 @@ mod test {
     fn single_exponent_parses_correctly() {
         use ExpressionIr::*;
         let scan = Scanner::from_text("a^b");
-        let out = parse(scan).unwrap();
+        let out = parse((scan, NonTerminal::Expr, Token::EOF)).unwrap();
         let expected = BinaryOperation(
             Box::new(Variable("a".into())),
             Operator::Power,
@@ -344,7 +385,7 @@ mod test {
     fn integer_exponents_parse_correctly() {
         use ExpressionIr::*;
         let scan = Scanner::from_text("2^3");
-        let out = parse(scan).unwrap();
+        let out = parse((scan, NonTerminal::Expr, Token::EOF)).unwrap();
         let expected = NumberLiteral(8);
         assert_eq!(out, expected);
     }
@@ -353,7 +394,7 @@ mod test {
     fn float_exponents_parse_correctly() {
         use ExpressionIr::*;
         let scan = Scanner::from_text("2.0^3.0");
-        let out = parse(scan).unwrap();
+        let out = parse((scan, NonTerminal::Expr, Token::EOF)).unwrap();
         let expected = FloatLiteral(8.0);
         assert_eq!(out, expected);
     }
@@ -361,14 +402,14 @@ mod test {
     #[test]
     fn parsing_lone_comment_fails_gracefully() {
         let scan = Scanner::from_text("//");
-        assert!(parse(scan).is_err());
+        assert!(parse((scan, NonTerminal::Expr, Token::EOF)).is_err());
     }
 
     #[test]
     fn trailing_comment_doesnt_cause_failure() {
         use ExpressionIr::*;
         let scan = Scanner::from_text("X//");
-        let out = parse(scan).unwrap();
+        let out = parse((scan, NonTerminal::Expr, Token::EOF)).unwrap();
         let expected = Variable("X".into());
         assert_eq!(out, expected);
     }
@@ -377,7 +418,7 @@ mod test {
     fn integer_power_overflow_fails_gracefully() {
         use ExpressionIr::*;
         let scan = Scanner::from_text("8^88");
-        let out = parse(scan).unwrap();
+        let out = parse((scan, NonTerminal::Expr, Token::EOF)).unwrap();
         let expected = BinaryOperation(
             Box::new(NumberLiteral(8)),
             Operator::Power,
@@ -390,7 +431,7 @@ mod test {
     fn integer_multiply_overflow_fails_gracefully() {
         use ExpressionIr::*;
         let scan = Scanner::from_text("20^8*20^8");
-        let out = parse(scan).unwrap();
+        let out = parse((scan, NonTerminal::Expr, Token::EOF)).unwrap();
         let expected = BinaryOperation(
             Box::new(NumberLiteral(25600000000)),
             Operator::Multiply,
