@@ -12,6 +12,10 @@ use table::{NonTerminal, Table};
 
 pub type Result<T> = std::result::Result<T, ParseError>;
 
+pub fn parse_expression(scan: Peekable<Scanner>) ->Result<ast::Expression> {
+    parse((scan, NonTerminal::Expr, Token::EOF))
+}
+
 pub struct ParseArgs {
     scan: Peekable<Scanner>,
     start: NonTerminal,
