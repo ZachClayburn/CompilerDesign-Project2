@@ -1,9 +1,9 @@
 use clap::{App, Arg, ArgGroup};
 use colored::*;
 use compiler_design_project_2::*;
+use parser::parse_expression;
 use scanner::Scanner;
 use simple_logger::SimpleLogger;
-use parser::parse_expression;
 
 #[cfg(not(tarpaulin_include))]
 fn main() {

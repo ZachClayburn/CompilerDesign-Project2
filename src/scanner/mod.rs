@@ -696,12 +696,10 @@ mod tests {
     fn float_with_trailing_illegal_char_rejected() {
         let scan = Scanner::from_text("12.34a");
         let tokens = scan.collect::<Vec<_>>();
-        let expected = vec![
-            Err(ScannerError {
-                message: "Invalid Number".into(),
-                location: Location { line: 1, column: 1 },
-            }),
-        ];
+        let expected = vec![Err(ScannerError {
+            message: "Invalid Number".into(),
+            location: Location { line: 1, column: 1 },
+        })];
         assert_eq!(tokens, expected);
     }
 

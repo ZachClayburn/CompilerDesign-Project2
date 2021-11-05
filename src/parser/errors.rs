@@ -1,5 +1,5 @@
-use std::fmt::Display;
 use crate::scanner::ScannerError;
+use std::fmt::Display;
 use std::num::{ParseFloatError, ParseIntError, TryFromIntError};
 
 #[derive(Debug, PartialEq, Eq)]

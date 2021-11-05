@@ -12,7 +12,7 @@ use table::{NonTerminal, Table};
 
 pub type Result<T> = std::result::Result<T, ParseError>;
 
-pub fn parse_expression(scan: Peekable<Scanner>) ->Result<ast::Expression> {
+pub fn parse_expression(scan: Peekable<Scanner>) -> Result<ast::Expression> {
     parse((scan, NonTerminal::Expr, Token::EOF))
 }
 
@@ -203,10 +203,10 @@ mod test {
         let scan = Scanner::from_text("a+b");
         let out = parse((scan, NonTerminal::Expr, Token::EOF));
         let expected = Ok(BinaryOperation(
-                    Box::new(Variable("a".into())),
-                    Operator::Plus,
-                    Box::new(Variable("b".into())),
-                ));
+            Box::new(Variable("a".into())),
+            Operator::Plus,
+            Box::new(Variable("b".into())),
+        ));
         assert_eq!(out, expected);
     }
 
@@ -216,10 +216,10 @@ mod test {
         let scan = Scanner::from_text("a-b");
         let out = parse((scan, NonTerminal::Expr, Token::EOF));
         let expected = Ok(BinaryOperation(
-                    Box::new(Variable("a".into())),
-                    Operator::Minus,
-                    Box::new(Variable("b".into())),
-                ));
+            Box::new(Variable("a".into())),
+            Operator::Minus,
+            Box::new(Variable("b".into())),
+        ));
         assert_eq!(out, expected);
     }
 
@@ -229,10 +229,10 @@ mod test {
         let scan = Scanner::from_text("a*b");
         let out = parse((scan, NonTerminal::Expr, Token::EOF));
         let expected = Ok(BinaryOperation(
-                    Box::new(Variable("a".into())),
-                    Operator::Multiply,
-                    Box::new(Variable("b".into())),
-                ));
+            Box::new(Variable("a".into())),
+            Operator::Multiply,
+            Box::new(Variable("b".into())),
+        ));
         assert_eq!(out, expected);
     }
 
@@ -242,10 +242,10 @@ mod test {
         let scan = Scanner::from_text("a/b");
         let out = parse((scan, NonTerminal::Expr, Token::EOF));
         let expected = Ok(BinaryOperation(
-                    Box::new(Variable("a".into())),
-                    Operator::Divide,
-                    Box::new(Variable("b".into())),
-                ));
+            Box::new(Variable("a".into())),
+            Operator::Divide,
+            Box::new(Variable("b".into())),
+        ));
         assert_eq!(out, expected);
     }
 
@@ -255,18 +255,18 @@ mod test {
         let scan = Scanner::from_text("a*b-c+d");
         let out = parse((scan, NonTerminal::Expr, Token::EOF));
         let expected = Ok(BinaryOperation(
-                    Box::new(BinaryOperation(
-                        Box::new(BinaryOperation(
-                            Box::new(Variable("a".into())),
-                            Operator::Multiply,
-                            Box::new(Variable("b".into())),
-                        )),
-                        Operator::Minus,
-                        Box::new(Variable("c".into())),
-                    )),
-                    Operator::Plus,
-                    Box::new(Variable("d".into())),
-                ));
+            Box::new(BinaryOperation(
+                Box::new(BinaryOperation(
+                    Box::new(Variable("a".into())),
+                    Operator::Multiply,
+                    Box::new(Variable("b".into())),
+                )),
+                Operator::Minus,
+                Box::new(Variable("c".into())),
+            )),
+            Operator::Plus,
+            Box::new(Variable("d".into())),
+        ));
         assert_eq!(out, expected);
     }
 
@@ -297,7 +297,10 @@ mod test {
     #[test]
     fn expressions_format_correctly() {
         let scan = Scanner::from_text("a*b+c/d-(e)");
-        let out = format!("{}", parse::<_, Expression>((scan, NonTerminal::Expr, Token::EOF)).unwrap());
+        let out = format!(
+            "{}",
+            parse::<_, Expression>((scan, NonTerminal::Expr, Token::EOF)).unwrap()
+        );
         let expected = "(((a * b) + (c / d)) - e)";
         assert_eq!(out, expected);
     }
@@ -308,10 +311,10 @@ mod test {
         let scan = Scanner::from_text("1/0");
         let out = parse((scan, NonTerminal::Expr, Token::EOF));
         let expected = Ok(BinaryOperation(
-                    Box::new(NumberLiteral(1)),
-                    Operator::Divide,
-                    Box::new(NumberLiteral(0)),
-                ));
+            Box::new(NumberLiteral(1)),
+            Operator::Divide,
+            Box::new(NumberLiteral(0)),
+        ));
         assert_eq!(out, expected);
     }
 
@@ -329,7 +332,10 @@ mod test {
         use Expression::*;
         let scan = Scanner::from_text("-a");
         let out = parse((scan, NonTerminal::Expr, Token::EOF));
-        let expected = Ok(UnaryOperation(Operator::Minus, Box::new(Variable("a".into()))));
+        let expected = Ok(UnaryOperation(
+            Operator::Minus,
+            Box::new(Variable("a".into())),
+        ));
         assert_eq!(out, expected);
     }
 
@@ -378,11 +384,10 @@ mod test {
         let scan = Scanner::from_text("a^b");
         let out = parse((scan, NonTerminal::Expr, Token::EOF));
         let expected = Ok(BinaryOperation(
-                    Box::new(Variable("a".into())),
-                    Operator::Power,
-                    Box::new(Variable("b".into())),
-                ))
-        ;
+            Box::new(Variable("a".into())),
+            Operator::Power,
+            Box::new(Variable("b".into())),
+        ));
         assert_eq!(out, expected);
     }
 
@@ -425,11 +430,10 @@ mod test {
         let scan = Scanner::from_text("8^88");
         let out = parse((scan, NonTerminal::Expr, Token::EOF));
         let expected = Ok(BinaryOperation(
-                    Box::new(NumberLiteral(8)),
-                    Operator::Power,
-                    Box::new(NumberLiteral(88)),
-                ))
-        ;
+            Box::new(NumberLiteral(8)),
+            Operator::Power,
+            Box::new(NumberLiteral(88)),
+        ));
         assert_eq!(out, expected);
     }
 
@@ -439,11 +443,10 @@ mod test {
         let scan = Scanner::from_text("20^8*20^8");
         let out = parse((scan, NonTerminal::Expr, Token::EOF));
         let expected = Ok(BinaryOperation(
-                    Box::new(NumberLiteral(25600000000)),
-                    Operator::Multiply,
-                    Box::new(NumberLiteral(25600000000)),
-                ))
-        ;
+            Box::new(NumberLiteral(25600000000)),
+            Operator::Multiply,
+            Box::new(NumberLiteral(25600000000)),
+        ));
         assert_eq!(out, expected);
     }
 
@@ -451,7 +454,7 @@ mod test {
     fn minimal_program_parses_correctly() {
         let scan = Scanner::from_text("program a; begin end.");
         let out = parse(scan);
-        let expected = Ok(CompilationUnit {name: "a".into()});
+        let expected = Ok(CompilationUnit { name: "a".into() });
         assert_eq!(out, expected);
     }
 }
