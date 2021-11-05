@@ -1,9 +1,9 @@
-mod ast;
+pub mod ast;
 pub mod errors;
 mod table;
 
 use crate::scanner::*;
-use ast::{Expression, ValueItem};
+use ast::{ValueItem, AST};
 use either::Either::{self, Left, Right};
 pub use errors::ParseError;
 use log::debug;
@@ -45,7 +45,7 @@ impl From<(Peekable<Scanner>, NonTerminal, Token)> for ParseArgs {
     }
 }
 
-pub fn parse<A>(args: A) -> Result<Expression>
+pub fn parse<A>(args: A) -> Result<AST>
 where
     A: Into<ParseArgs>,
 {
@@ -181,7 +181,7 @@ mod test {
     fn single_number_parses_correctly() {
         let scan = Scanner::from_text("1");
         let out = parse((scan, NonTerminal::Expr, Token::EOF)).unwrap();
-        let expected = Expression::NumberLiteral(1);
+        let expected = Expression::NumberLiteral(1).into();
         assert_eq!(out, expected);
     }
 
@@ -189,7 +189,7 @@ mod test {
     fn single_variable_parses_correctly() {
         let scan = Scanner::from_text("a");
         let out = parse((scan, NonTerminal::Expr, Token::EOF)).unwrap();
-        let expected = Expression::Variable("a".into());
+        let expected = Expression::Variable("a".into()).into();
         assert_eq!(out, expected);
     }
 
@@ -202,7 +202,7 @@ mod test {
             Box::new(Variable("a".into())),
             Operator::Plus,
             Box::new(Variable("b".into())),
-        );
+        ).into();
         assert_eq!(out, expected);
     }
 
@@ -215,7 +215,7 @@ mod test {
             Box::new(Variable("a".into())),
             Operator::Minus,
             Box::new(Variable("b".into())),
-        );
+        ).into();
         assert_eq!(out, expected);
     }
 
@@ -228,7 +228,7 @@ mod test {
             Box::new(Variable("a".into())),
             Operator::Multiply,
             Box::new(Variable("b".into())),
-        );
+        ).into();
         assert_eq!(out, expected);
     }
 
@@ -241,7 +241,7 @@ mod test {
             Box::new(Variable("a".into())),
             Operator::Divide,
             Box::new(Variable("b".into())),
-        );
+        ).into();
         assert_eq!(out, expected);
     }
 
@@ -262,7 +262,7 @@ mod test {
             )),
             Operator::Plus,
             Box::new(Variable("d".into())),
-        );
+        ).into();
         assert_eq!(out, expected);
     }
 
@@ -271,7 +271,7 @@ mod test {
         use Expression::*;
         let scan = Scanner::from_text("(a)");
         let out = parse((scan, NonTerminal::Expr, Token::EOF)).unwrap();
-        let expected = Variable("a".into());
+        let expected = Variable("a".into()).into();
         assert_eq!(out, expected);
     }
 
@@ -279,7 +279,7 @@ mod test {
     fn literal_expressions_can_collapse() {
         let scan = Scanner::from_text("2*3-4+5");
         let out = parse((scan, NonTerminal::Expr, Token::EOF)).unwrap();
-        let expected = Expression::NumberLiteral(7);
+        let expected = Expression::NumberLiteral(7).into();
         assert_eq!(out, expected);
     }
 
@@ -307,7 +307,7 @@ mod test {
             Box::new(NumberLiteral(1)),
             Operator::Divide,
             Box::new(NumberLiteral(0)),
-        );
+        ).into();
         assert_eq!(out, expected);
     }
 
@@ -316,7 +316,7 @@ mod test {
         use Expression::*;
         let scan = Scanner::from_text("-1");
         let out = parse((scan, NonTerminal::Expr, Token::EOF)).unwrap();
-        let expected = NumberLiteral(-1);
+        let expected = NumberLiteral(-1).into();
         assert_eq!(out, expected);
     }
 
@@ -325,7 +325,7 @@ mod test {
         use Expression::*;
         let scan = Scanner::from_text("-a");
         let out = parse((scan, NonTerminal::Expr, Token::EOF)).unwrap();
-        let expected = UnaryOperation(Operator::Minus, Box::new(Variable("a".into())));
+        let expected = UnaryOperation(Operator::Minus, Box::new(Variable("a".into()))).into();
         assert_eq!(out, expected);
     }
 
@@ -346,7 +346,7 @@ mod test {
         use Expression::*;
         let scan = Scanner::from_text("12.34");
         let out = parse((scan, NonTerminal::Expr, Token::EOF)).unwrap();
-        let expected = FloatLiteral(12.34);
+        let expected = FloatLiteral(12.34).into();
         assert_eq!(out, expected);
     }
 
@@ -355,7 +355,7 @@ mod test {
         use Expression::*;
         let scan = Scanner::from_text("1.0+2.0");
         let out = parse((scan, NonTerminal::Expr, Token::EOF)).unwrap();
-        let expected = FloatLiteral(3.0);
+        let expected = FloatLiteral(3.0).into();
         assert_eq!(out, expected);
     }
 
@@ -364,7 +364,7 @@ mod test {
         use Expression::*;
         let scan = Scanner::from_text("-12.34");
         let out = parse((scan, NonTerminal::Expr, Token::EOF)).unwrap();
-        let expected = FloatLiteral(-12.34);
+        let expected = FloatLiteral(-12.34).into();
         assert_eq!(out, expected);
     }
 
@@ -377,7 +377,7 @@ mod test {
             Box::new(Variable("a".into())),
             Operator::Power,
             Box::new(Variable("b".into())),
-        );
+        ).into();
         assert_eq!(out, expected);
     }
 
@@ -386,7 +386,7 @@ mod test {
         use Expression::*;
         let scan = Scanner::from_text("2^3");
         let out = parse((scan, NonTerminal::Expr, Token::EOF)).unwrap();
-        let expected = NumberLiteral(8);
+        let expected = NumberLiteral(8).into();
         assert_eq!(out, expected);
     }
 
@@ -395,7 +395,7 @@ mod test {
         use Expression::*;
         let scan = Scanner::from_text("2.0^3.0");
         let out = parse((scan, NonTerminal::Expr, Token::EOF)).unwrap();
-        let expected = FloatLiteral(8.0);
+        let expected = FloatLiteral(8.0).into();
         assert_eq!(out, expected);
     }
 
@@ -410,7 +410,7 @@ mod test {
         use Expression::*;
         let scan = Scanner::from_text("X//");
         let out = parse((scan, NonTerminal::Expr, Token::EOF)).unwrap();
-        let expected = Variable("X".into());
+        let expected = Variable("X".into()).into();
         assert_eq!(out, expected);
     }
 
@@ -423,7 +423,7 @@ mod test {
             Box::new(NumberLiteral(8)),
             Operator::Power,
             Box::new(NumberLiteral(88)),
-        );
+        ).into();
         assert_eq!(out, expected);
     }
 
@@ -436,7 +436,7 @@ mod test {
             Box::new(NumberLiteral(25600000000)),
             Operator::Multiply,
             Box::new(NumberLiteral(25600000000)),
-        );
+        ).into();
         assert_eq!(out, expected);
     }
 }

@@ -1,7 +1,19 @@
 use super::{Either, Left, Result, Right, Token};
 use num::checked_pow;
-use std::convert::TryInto;
-use std::fmt::Display;
+use std::{convert::TryInto, fmt::Display};
+
+#[derive(Debug, PartialEq)]
+pub enum AST {
+    Expr(Expression),
+}
+
+impl Display for AST {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Expr(expression) => write!(f, "{}", expression),
+        }
+    }
+}
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Operator {
@@ -49,23 +61,31 @@ impl Display for Expression {
     }
 }
 
-pub(super) type ValueItem = Either<Expression, Token>;
+impl From<Expression> for AST {
+    fn from(exp: Expression) -> Self {
+        Self::Expr(exp)
+    }
+}
+
+pub(super) type ValueItem = Either<AST, Token>;
 pub(super) type ReductionOp = fn(Vec<ValueItem>) -> Result<Vec<ValueItem>>;
 
 pub fn reduce_value(mut stack: Vec<ValueItem>) -> Result<Vec<ValueItem>> {
+    use Expression::*;
+    use AST::*;
     match stack.pop() {
         Some(Right(Token::Number(info))) => {
             let number = info.content.parse()?;
-            stack.push(Left(Expression::NumberLiteral(number)));
+            stack.push(Left(Expr(NumberLiteral(number))));
             Ok(stack)
         }
         Some(Right(Token::Identifier(info))) => {
-            stack.push(Left(Expression::Variable(info.content)));
+            stack.push(Left(Expr(Variable(info.content))));
             Ok(stack)
         }
         Some(Right(Token::Float(info))) => {
             let number = info.content.parse()?;
-            stack.push(Left(Expression::FloatLiteral(number)));
+            stack.push(Left(Expr(FloatLiteral(number))));
             Ok(stack)
         }
         Some(unexpected) => Err(format!(
@@ -80,8 +100,9 @@ pub fn reduce_value(mut stack: Vec<ValueItem>) -> Result<Vec<ValueItem>> {
 pub fn reduce_binary_op(mut stack: Vec<ValueItem>) -> Result<Vec<ValueItem>> {
     use super::Token::*;
     use Expression::*;
+    use AST::*;
     let rhs = match stack.pop() {
-        Some(Left(expr)) => expr,
+        Some(Left(Expr(expr))) => expr,
         Some(bad) => return Err(format!("Expected an expression, found {}", bad).into()),
         None => return Err("Missing ) while trying to reduce parenthetical".into()),
     };
@@ -94,7 +115,7 @@ pub fn reduce_binary_op(mut stack: Vec<ValueItem>) -> Result<Vec<ValueItem>> {
         bad => return Err(format!("{} not a valid binary operator", bad).into()),
     };
     let lhs = match stack.pop() {
-        Some(Left(expr)) => expr,
+        Some(Left(Expr(expr))) => expr,
         Some(bad) => return Err(format!("Expected an expression, found {}", bad).into()),
         None => return Err("Missing ) while trying to reduce parenthetical".into()),
     };
@@ -139,7 +160,7 @@ pub fn reduce_binary_op(mut stack: Vec<ValueItem>) -> Result<Vec<ValueItem>> {
         },
         (lhs, rhs) => BinaryOperation(Box::new(lhs), op, Box::new(rhs)),
     };
-    stack.push(Left(expr));
+    stack.push(Left(Expr(expr)));
     Ok(stack)
 }
 
@@ -165,8 +186,9 @@ pub fn reduce_parenthetical(mut stack: Vec<ValueItem>) -> Result<Vec<ValueItem>>
 }
 
 pub fn reduce_unary_operator(mut stack: Vec<ValueItem>) -> Result<Vec<ValueItem>> {
+    use AST::*;
     let expr = match stack.pop() {
-        Some(Left(expr)) => expr,
+        Some(Left(Expr(expr))) => expr,
         Some(bad) => return Err(format!("Expected expression, found {}", bad).into()),
         None => return Err("Missing expression while trying to reduce unary operator".into()),
     };
@@ -176,10 +198,10 @@ pub fn reduce_unary_operator(mut stack: Vec<ValueItem>) -> Result<Vec<ValueItem>
         None => return Err("Missing - while trying to reduce unary operator".into()),
     };
 
-    stack.push(Left(match expr {
+    stack.push(Left(Expr(match expr {
         Expression::NumberLiteral(value) => Expression::NumberLiteral(-value),
         Expression::FloatLiteral(value) => Expression::FloatLiteral(-value),
         exp => Expression::UnaryOperation(Operator::Minus, Box::new(exp)),
-    }));
+    })));
     Ok(stack)
 }
