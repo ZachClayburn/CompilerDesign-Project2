@@ -1,12 +1,14 @@
 use clap::{App, Arg, ArgGroup};
-use compiler_design_project_2::*;
 use colored::*;
+use compiler_design_project_2::*;
 use parser::parse;
 use scanner::Scanner;
 use simple_logger::SimpleLogger;
 
 #[cfg(not(tarpaulin_include))]
 fn main() {
+    use compiler_design_project_2::parser::ast::Expression;
+
     let matches = App::new(env!("CARGO_BIN_NAME"))
         .version("1.0")
         .author("Zach Clayburn <zachclayburn@gmail.com>")
@@ -48,7 +50,7 @@ fn main() {
 
     if let Some(expression) = matches.value_of("expression") {
         let scan = Scanner::from_text(expression);
-        match parse(scan) {
+        match parse::<_, Expression>(scan) {
             Ok(result) => println!("{}: {}", "valid".green(), result),
             Err(error) => {
                 eprintln!("{}: {}", "invalid".red(), error);
@@ -68,7 +70,7 @@ fn main() {
         let max_width = file_contents.lines().map(|x| x.len()).max().unwrap_or(0);
         for line in file_contents.lines() {
             print!("{:width$}", line, width = max_width);
-            match parse(Scanner::from_text(line)) {
+            match parse::<_, Expression>(Scanner::from_text(line)) {
                 Ok(result) => println!(" {} {}", "valid".green(), result),
                 Err(err) => println!(" {} {}", "invalid".red(), err),
             }
@@ -79,6 +81,7 @@ fn main() {
 #[cfg(test)]
 mod test {
     use super::*;
+    use compiler_design_project_2::parser::ast::Expression;
     use pretty_assertions::assert_eq;
 
     fn get_test_dir() -> std::path::PathBuf {
@@ -95,7 +98,7 @@ mod test {
         let test_file_contents = std::fs::read_to_string(d).unwrap();
         let bad_lines = test_file_contents
             .lines()
-            .filter(|x| parse(Scanner::from_text(x)).is_err())
+            .filter(|x| parse::<_, Expression>(Scanner::from_text(x)).is_err())
             .collect::<Vec<_>>();
         let expected: Vec<&str> = vec![];
         assert_eq!(bad_lines, expected);
@@ -109,7 +112,7 @@ mod test {
         let test_file_contents = std::fs::read_to_string(d).unwrap();
         let bad_lines = test_file_contents
             .lines()
-            .filter(|x| parse(Scanner::from_text(x)).is_ok())
+            .filter(|x| parse::<_, Expression>(Scanner::from_text(x)).is_ok())
             .collect::<Vec<_>>();
         let expected: Vec<&str> = vec![];
         assert_eq!(bad_lines, expected);

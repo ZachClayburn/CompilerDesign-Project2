@@ -1,6 +1,6 @@
-use super::{Either, Left, Result, Right, Token};
+use super::{Either, Left, ParseError, Result, Right, Token};
 use num::checked_pow;
-use std::{convert::TryInto, fmt::Display};
+use std::{convert::{TryFrom, TryInto}, fmt::Display};
 
 #[derive(Debug, PartialEq)]
 pub enum AST {
@@ -61,9 +61,13 @@ impl Display for Expression {
     }
 }
 
-impl From<Expression> for AST {
-    fn from(exp: Expression) -> Self {
-        Self::Expr(exp)
+impl TryFrom<AST> for Expression {
+    type Error = ParseError;
+
+    fn try_from(value: AST) -> Result<Self> {
+        match value {
+            AST::Expr(expr) => Ok(expr),
+        }
     }
 }
 
