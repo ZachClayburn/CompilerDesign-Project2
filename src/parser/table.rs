@@ -57,9 +57,8 @@ impl Table {
         use Token::*;
         let productions = {
             vec![
-                /*0*/ (Goal, vec![Left(Expr)]),
-                /*1*/ (Expr, vec![Left(Term), Left(ExprPrime)]),
-                /*2*/
+                (Goal, vec![Left(Expr)]),
+                (Expr, vec![Left(Term), Left(ExprPrime)]),
                 (
                     ExprPrime,
                     vec![
@@ -69,7 +68,6 @@ impl Table {
                         Left(ExprPrime),
                     ],
                 ),
-                /*3*/
                 (
                     ExprPrime,
                     vec![
@@ -79,9 +77,8 @@ impl Table {
                         Left(ExprPrime),
                     ],
                 ),
-                (ExprPrime, /*4*/ vec![]),
-                /*5*/ (Term, vec![Left(Power), Left(TermPrime)]),
-                /*6*/
+                (ExprPrime, vec![]),
+                (Term, vec![Left(Power), Left(TermPrime)]),
                 (
                     TermPrime,
                     vec![
@@ -91,7 +88,6 @@ impl Table {
                         Left(TermPrime),
                     ],
                 ),
-                /*7*/
                 (
                     TermPrime,
                     vec![
@@ -101,9 +97,8 @@ impl Table {
                         Left(TermPrime),
                     ],
                 ),
-                /*8*/ (TermPrime, vec![]),
-                /*9*/ (Power, vec![Left(Factor), Left(PowerPrime)]),
-                /*10*/
+                (TermPrime, vec![]),
+                (Power, vec![Left(Factor), Left(PowerPrime)]),
                 (
                     PowerPrime,
                     vec![
@@ -113,8 +108,7 @@ impl Table {
                         Left(PowerPrime),
                     ],
                 ),
-                /*11*/ (PowerPrime, vec![]),
-                /*12*/
+                (PowerPrime, vec![]),
                 (
                     Factor,
                     vec![
@@ -124,8 +118,7 @@ impl Table {
                         Left(Reduction(reduce_parenthetical)),
                     ],
                 ),
-                /*13*/ (Factor, vec![Left(Atom)]),
-                /*14*/
+                (Factor, vec![Left(Atom)]),
                 (
                     Factor,
                     vec![
@@ -134,12 +127,10 @@ impl Table {
                         Left(Reduction(reduce_unary_operator)),
                     ],
                 ),
-                /*15*/
                 (
                     Atom,
                     vec![Right(Number(<_>::default())), Left(Reduction(reduce_value))],
                 ),
-                /*16*/
                 (
                     Atom,
                     vec![
@@ -147,7 +138,6 @@ impl Table {
                         Left(Reduction(reduce_value)),
                     ],
                 ),
-                /*17*/
                 (
                     Atom,
                     vec![Right(Float(<_>::default())), Left(Reduction(reduce_value))],
