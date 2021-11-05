@@ -26,7 +26,7 @@ impl Default for ParseArgs {
     fn default() -> Self {
         Self {
             scan: Scanner::from_text(""),
-            start: NonTerminal::Goal,
+            start: NonTerminal::Prog,
             end: Token::EOF,
         }
     }
@@ -41,7 +41,6 @@ impl From<Peekable<Scanner>> for ParseArgs {
     }
 }
 
-#[cfg(test)]
 impl From<(Peekable<Scanner>, NonTerminal, Token)> for ParseArgs {
     fn from(tuple: (Peekable<Scanner>, NonTerminal, Token)) -> Self {
         let (scan, start, end) = tuple;
@@ -445,6 +444,14 @@ mod test {
                     Box::new(NumberLiteral(25600000000)),
                 ))
         ;
+        assert_eq!(out, expected);
+    }
+
+    #[test]
+    fn minimal_program_parses_correctly() {
+        let scan = Scanner::from_text("program a; begin end.");
+        let out = parse(scan);
+        let expected = Ok(CompilationUnit {name: "a".into()});
         assert_eq!(out, expected);
     }
 }

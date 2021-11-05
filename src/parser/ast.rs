@@ -1,16 +1,45 @@
+use crate::scanner::TokenInfo;
+
 use super::{Either, Left, ParseError, Result, Right, Token};
 use num::checked_pow;
-use std::{convert::{TryFrom, TryInto}, fmt::Display};
+use std::{
+    convert::{TryFrom, TryInto},
+    fmt::Display,
+};
+
+#[derive(Debug, PartialEq)]
+pub struct CompilationUnit {
+    pub name: String,
+}
+
+impl Display for CompilationUnit {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Program: {}", self.name)
+    }
+}
+
+impl TryFrom<AST> for CompilationUnit {
+    type Error = ParseError;
+
+    fn try_from(value: AST) -> Result<Self> {
+        match value {
+            AST::Prog(prog) => Ok(prog),
+            AST::Expr(..) => Err("Expected an Program, but a Expression was produced!".into()),
+        }
+    }
+}
 
 #[derive(Debug, PartialEq)]
 pub enum AST {
     Expr(Expression),
+    Prog(CompilationUnit),
 }
 
 impl Display for AST {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Expr(expression) => write!(f, "{}", expression),
+            Self::Prog(program) => write!(f, "{}", program),
         }
     }
 }
@@ -67,6 +96,7 @@ impl TryFrom<AST> for Expression {
     fn try_from(value: AST) -> Result<Self> {
         match value {
             AST::Expr(expr) => Ok(expr),
+            AST::Prog(..) => Err("Expected an Expression, but a Program was produced!".into()),
         }
     }
 }
@@ -207,5 +237,49 @@ pub fn reduce_unary_operator(mut stack: Vec<ValueItem>) -> Result<Vec<ValueItem>
         Expression::FloatLiteral(value) => Expression::FloatLiteral(-value),
         exp => Expression::UnaryOperation(Operator::Minus, Box::new(exp)),
     })));
+    Ok(stack)
+}
+
+pub fn reduce_program(mut stack: Vec<ValueItem>) -> Result<Vec<ValueItem>> {
+    use Token::*;
+
+    match stack.pop() {
+        Some(Right(Dot(_))) => (),
+        Some(bad) => return Err(format!("Expected ., but found {}", bad).into()),
+        None => return Err(format!("Missing . while trying to reduce program").into()),
+    };
+
+    match stack.pop() {
+        Some(Right(End(_))) => (),
+        Some(bad) => return Err(format!("Expected end, but found {}", bad).into()),
+        None => return Err(format!("Missing end while trying to reduce program").into()),
+    };
+
+    match stack.pop() {
+        Some(Right(Begin(_))) => (),
+        Some(bad) => return Err(format!("Expected begin, but found {}", bad).into()),
+        None => return Err(format!("Missing begin while trying to reduce program").into()),
+    };
+
+    match stack.pop() {
+        Some(Right(Semicolon(_))) => (),
+        Some(bad) => return Err(format!("Expected ;, but found {}", bad).into()),
+        None => return Err(format!("Missing ; while trying to reduce program").into()),
+    };
+
+    let id = match stack.pop() {
+        Some(Right(Identifier(TokenInfo { content, .. }))) => content,
+        Some(bad) => return Err(format!("Expected program name, but found {}", bad).into()),
+        None => return Err(format!("Missing program name while trying to reduce program").into()),
+    };
+
+    match stack.pop() {
+        Some(Right(Program(_))) => (),
+        Some(bad) => return Err(format!("Expected program, but found {}", bad).into()),
+        None => return Err(format!("Missing program while trying to reduce program").into()),
+    };
+
+    stack.push(Left(AST::Prog(CompilationUnit { name: id })));
+
     Ok(stack)
 }
