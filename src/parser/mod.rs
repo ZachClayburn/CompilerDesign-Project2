@@ -457,4 +457,15 @@ mod test {
         let expected = Ok(CompilationUnit { name: "a".into() });
         assert_eq!(out, expected);
     }
+
+    #[test]
+    fn assignment_expression_parses_correctly() {
+        let scan = Scanner::from_text("num a = 1;");
+        let out = parse((scan, NonTerminal::NumAssignment, Token::EOF));
+        let expected = Ok(Statement::NumAssignment {
+            name: "a".into(),
+            expression: Expression::NumberLiteral(1),
+        });
+        assert_eq!(out, expected);
+    }
 }

@@ -1,7 +1,7 @@
 use super::{ast, Either, Left, Right, Token};
 use ast::{
-    reduce_binary_op, reduce_parenthetical, reduce_program, reduce_unary_operator, reduce_value,
-    ReductionOp,
+    reduce_assignment, reduce_binary_op, reduce_parenthetical, reduce_program,
+    reduce_unary_operator, reduce_value, ReductionOp,
 };
 use log::{error, trace, warn};
 use std::collections::{HashMap, HashSet};
@@ -12,6 +12,8 @@ use std::mem::discriminant;
 pub(super) enum NonTerminal {
     Goal,
     Prog,
+    StatementList,
+    NumAssignment,
     Expr,
     ExprPrime,
     Term,
@@ -29,6 +31,8 @@ impl Display for NonTerminal {
         match self {
             NonTerminal::Goal => write!(f, "Goal"),
             NonTerminal::Prog => write!(f, "Prog"),
+            NonTerminal::StatementList => write!(f, "StatementList"),
+            NonTerminal::NumAssignment => write!(f, "NumAssignment"),
             NonTerminal::Expr => write!(f, "Expr"),
             NonTerminal::ExprPrime => write!(f, "Expr'"),
             NonTerminal::Term => write!(f, "Term"),
@@ -71,6 +75,17 @@ impl Table {
                         Right(End(<_>::default())),
                         Right(Dot(<_>::default())),
                         Left(Reduction(reduce_program)),
+                    ],
+                ),
+                (
+                    NumAssignment,
+                    vec![
+                        Right(Num(<_>::default())),
+                        Right(Identifier(<_>::default())),
+                        Right(Assign(<_>::default())),
+                        Left(Expr),
+                        Right(Semicolon(<_>::default())),
+                        Left(Reduction(reduce_assignment)),
                     ],
                 ),
                 (Expr, vec![Left(Term), Left(ExprPrime)]),

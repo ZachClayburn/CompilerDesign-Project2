@@ -25,6 +25,7 @@ impl TryFrom<AST> for CompilationUnit {
         match value {
             AST::Prog(prog) => Ok(prog),
             AST::Expr(..) => Err("Expected an Program, but a Expression was produced!".into()),
+            AST::Stmnt(..) => Err("Expected an Program, but a Statement was produced!".into()),
         }
     }
 }
@@ -33,6 +34,7 @@ impl TryFrom<AST> for CompilationUnit {
 pub enum AST {
     Expr(Expression),
     Prog(CompilationUnit),
+    Stmnt(Statement),
 }
 
 impl Display for AST {
@@ -40,6 +42,7 @@ impl Display for AST {
         match self {
             Self::Expr(expression) => write!(f, "{}", expression),
             Self::Prog(program) => write!(f, "{}", program),
+            Self::Stmnt(program) => write!(f, "{}", program),
         }
     }
 }
@@ -97,6 +100,35 @@ impl TryFrom<AST> for Expression {
         match value {
             AST::Expr(expr) => Ok(expr),
             AST::Prog(..) => Err("Expected an Expression, but a Program was produced!".into()),
+            AST::Stmnt(..) => Err("Expected an Expression, but a Statement was produced!".into()),
+        }
+    }
+}
+
+#[derive(Debug, PartialEq)]
+pub enum Statement {
+    NumAssignment {
+        name: String,
+        expression: Expression,
+    },
+}
+
+impl Display for Statement {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Statement::NumAssignment { name, expression } => todo!(),
+        }
+    }
+}
+
+impl TryFrom<AST> for Statement {
+    type Error = ParseError;
+
+    fn try_from(value: AST) -> Result<Self> {
+        match value {
+            AST::Stmnt(statement) => Ok(statement),
+            AST::Prog(..) => Err("Expected an Statement, but a Program was produced!".into()),
+            AST::Expr(..) => Err("Expected an Statement, but a Expression was produced!".into()),
         }
     }
 }
@@ -280,6 +312,46 @@ pub fn reduce_program(mut stack: Vec<ValueItem>) -> Result<Vec<ValueItem>> {
     };
 
     stack.push(Left(AST::Prog(CompilationUnit { name: id })));
+
+    Ok(stack)
+}
+
+pub fn reduce_assignment(mut stack: Vec<ValueItem>) -> Result<Vec<ValueItem>> {
+    use Token::*;
+
+    match stack.pop() {
+        Some(Right(Semicolon(_))) => (),
+        Some(bad) => return Err(format!("Expected ;, but found {}", bad).into()),
+        None => return Err(format!("Missing ; while trying to reduce program").into()),
+    };
+
+    let expression = match stack.pop() {
+        Some(Left(AST::Expr(expression))) => expression,
+        Some(bad) => return Err(format!("Expected expression, but found {}", bad).into()),
+        None => return Err(format!("Missing expression while trying to reduce program").into()),
+    };
+
+    match stack.pop() {
+        Some(Right(Assign(_))) => (),
+        Some(bad) => return Err(format!("Expected =, but found {}", bad).into()),
+        None => return Err(format!("Missing = while trying to reduce program").into()),
+    };
+
+    let name = match stack.pop() {
+        Some(Right(Identifier(TokenInfo { content, .. }))) => content,
+        Some(bad) => return Err(format!("Expected name, but found {}", bad).into()),
+        None => return Err(format!("Missing name while trying to reduce program").into()),
+    };
+
+    match stack.pop() {
+        Some(Right(Num(_))) => stack.push(Left(AST::Stmnt(Statement::NumAssignment {
+            name,
+            expression,
+        }))),
+        // TODO Add support for ish
+        Some(bad) => return Err(format!("Expected Num, but found {}", bad).into()),
+        None => return Err(format!("Missing Num while trying to reduce program").into()),
+    };
 
     Ok(stack)
 }
