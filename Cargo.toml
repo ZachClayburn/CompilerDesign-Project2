@@ -22,3 +22,8 @@ pretty_assertions = "1.0.0"
 name = "project_2"
 path = "src/bin/project_2.rs"
 test = true
+
+[[bin]]
+name = "table_viewer"
+path = "src/bin/table_viewer.rs"
+test = false

@@ -121,6 +121,10 @@ where
     unreachable!("Should not make it out of the loop!");
 }
 
+pub fn veiw_table_info() {
+    Table::new().print_info();
+}
+
 #[cfg(test)]
 mod test {
     use super::*;

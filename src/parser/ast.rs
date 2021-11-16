@@ -160,6 +160,19 @@ impl TryFrom<AST> for Statement {
 pub(super) type ValueItem = Either<AST, Token>;
 pub(super) type ReductionOp = fn(Vec<ValueItem>) -> Result<Vec<ValueItem>>;
 
+pub fn get_reduction_name(function_pointer: &ReductionOp) -> &'static str {
+    match *function_pointer {
+        x if x == reduce_value => "reduce_value()",
+        x if x == reduce_binary_op => "reduce_binary_op()",
+        x if x == reduce_parenthetical => "reduce_parenthetical()",
+        x if x == reduce_unary_operator => "reduce_unary_operator()",
+        x if x == reduce_program => "reduce_program()",
+        x if x == reduce_statement_list => "reduce_statement_list()",
+        x if x == reduce_assignment => "reduce_assignment()",
+        _ => panic!("unknown reduction"),
+    }
+}
+
 pub fn reduce_value(mut stack: Vec<ValueItem>) -> Result<Vec<ValueItem>> {
     use Expression::*;
     use AST::*;

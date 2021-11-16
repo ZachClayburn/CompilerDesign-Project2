@@ -1,6 +1,6 @@
 use super::{ast, Either, Left, Right, Token};
 use ast::{
-    reduce_assignment, reduce_binary_op, reduce_parenthetical, reduce_program,
+    get_reduction_name, reduce_assignment, reduce_binary_op, reduce_parenthetical, reduce_program,
     reduce_statement_list, reduce_unary_operator, reduce_value, ReductionOp,
 };
 use log::{error, trace, warn};
@@ -30,19 +30,19 @@ impl Display for NonTerminal {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         use std::fmt::Error;
         match self {
-            NonTerminal::Goal => write!(f, "Goal"),
-            NonTerminal::Prog => write!(f, "Prog"),
-            NonTerminal::StatementList => write!(f, "StatementList"),
-            NonTerminal::Assignment => write!(f, "Assignment"),
-            NonTerminal::TypeSpec => write!(f, "TypeSpec"),
-            NonTerminal::Expr => write!(f, "Expr"),
-            NonTerminal::ExprPrime => write!(f, "Expr'"),
-            NonTerminal::Term => write!(f, "Term"),
-            NonTerminal::TermPrime => write!(f, "Term'"),
-            NonTerminal::Power => write!(f, "Power"),
-            NonTerminal::PowerPrime => write!(f, "Power'"),
-            NonTerminal::Factor => write!(f, "Factor"),
-            NonTerminal::Atom => write!(f, "Atom"),
+            NonTerminal::Goal => "Goal".fmt(f),
+            NonTerminal::Prog => "Prog".fmt(f),
+            NonTerminal::StatementList => "StatementList".fmt(f),
+            NonTerminal::Assignment => "Assignment".fmt(f),
+            NonTerminal::TypeSpec => "TypeSpec".fmt(f),
+            NonTerminal::Expr => "Expr".fmt(f),
+            NonTerminal::ExprPrime => "Expr'".fmt(f),
+            NonTerminal::Term => "Term".fmt(f),
+            NonTerminal::TermPrime => "Term'".fmt(f),
+            NonTerminal::Power => "Power".fmt(f),
+            NonTerminal::PowerPrime => "Power'".fmt(f),
+            NonTerminal::Factor => "Factor".fmt(f),
+            NonTerminal::Atom => "Atom".fmt(f),
             NonTerminal::Reduction(_) => {
                 error!("Cannot format a reduction!");
                 Err(Error {})
@@ -299,6 +299,62 @@ impl Table {
             .get(&(self.get_focus_number(focus)?, self.get_word_number(word)?))?;
         trace!("Runnin rule {}", index);
         self.rules.get(index).map(|x| x.clone())
+    }
+
+    pub(super) fn print_info(self) {
+        let mut terminals_with_widths = self
+            .terminals
+            .iter()
+            .map(|x| (x, std::cmp::max(format!("{}", x).len(), 3)))
+            .collect::<Vec<_>>();
+
+        terminals_with_widths.push((&Token::EOF, 3));
+
+        let non_terminal_width = self
+            .non_terminals
+            .iter()
+            .map(|x| format!("{}", x).len())
+            .max()
+            .unwrap();
+
+        let start = format!("{:width$}|", "", width = non_terminal_width);
+        let header = terminals_with_widths
+            .iter()
+            .map(|(x, _)| format!("{:3}|", x))
+            .fold(start, |acc, x| acc + &x);
+        println!("{}", header);
+
+        for non_terminal in &self.non_terminals {
+            print!("{:width$}|", non_terminal, width = non_terminal_width);
+            for (terminal, col_width) in &terminals_with_widths {
+                let key = (
+                    self.get_focus_number(non_terminal).unwrap(),
+                    self.get_word_number(terminal).unwrap(),
+                );
+                if let Some(number) = self.lookup.get(&key) {
+                    print!("{:width$}", number, width = col_width);
+                } else {
+                    print!("{: >width$}", "_", width = col_width);
+                }
+                print!("|")
+            }
+            println!();
+        }
+
+        for (rule_num, rule) in self.rules.iter().enumerate() {
+            let output = rule
+                .iter()
+                .map(|x| {
+                    if let Left(NonTerminal::Reduction(fn_ptr)) = x {
+                        format!("{}", get_reduction_name(fn_ptr))
+                    } else {
+                        format!("{}", x)
+                    }
+                })
+                // .filter(|x| x.is_left() && !(matches!(x, Left(NonTerminal::Reduction(..)))))
+                .fold(String::new(), |acc, x| acc + &format!("{}, ", x));
+            println!("{:3} -> [{}]", rule_num, output);
+        }
     }
 }
 
