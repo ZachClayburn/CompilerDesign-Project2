@@ -10,6 +10,7 @@ use std::{
 #[derive(Debug, PartialEq)]
 pub struct CompilationUnit {
     pub name: String,
+    pub statements: Vec<Statement>,
 }
 
 impl Display for CompilationUnit {
@@ -24,8 +25,7 @@ impl TryFrom<AST> for CompilationUnit {
     fn try_from(value: AST) -> Result<Self> {
         match value {
             AST::Prog(prog) => Ok(prog),
-            AST::Expr(..) => Err("Expected an Program, but a Expression was produced!".into()),
-            AST::Stmnt(..) => Err("Expected an Program, but a Statement was produced!".into()),
+            bad => Err(format!("Expected Program, but {} was produced!", bad.get_name()).into()),
         }
     }
 }
@@ -35,6 +35,18 @@ pub enum AST {
     Expr(Expression),
     Prog(CompilationUnit),
     Stmnt(Statement),
+    StmntList(Vec<Statement>),
+}
+
+impl AST {
+    fn get_name(&self) -> &'static str {
+        match self {
+            AST::Expr(..) => "Expression",
+            AST::Prog(..) => "Program",
+            AST::Stmnt(..) => "Statement",
+            AST::StmntList(..) => "Statement List",
+        }
+    }
 }
 
 impl Display for AST {
@@ -42,7 +54,14 @@ impl Display for AST {
         match self {
             Self::Expr(expression) => write!(f, "{}", expression),
             Self::Prog(program) => write!(f, "{}", program),
-            Self::Stmnt(program) => write!(f, "{}", program),
+            Self::Stmnt(statement) => write!(f, "{}", statement),
+            Self::StmntList(list) => write!(
+                f,
+                "{}",
+                list.iter()
+                    .map(|s| format!("{}\n", s))
+                    .fold("".to_string(), |accum, s| accum + &s)
+            ),
         }
     }
 }
@@ -99,8 +118,7 @@ impl TryFrom<AST> for Expression {
     fn try_from(value: AST) -> Result<Self> {
         match value {
             AST::Expr(expr) => Ok(expr),
-            AST::Prog(..) => Err("Expected an Expression, but a Program was produced!".into()),
-            AST::Stmnt(..) => Err("Expected an Expression, but a Statement was produced!".into()),
+            bad => Err(format!("Expected Expression, but {} was produced!", bad.get_name()).into()),
         }
     }
 }
@@ -127,8 +145,7 @@ impl TryFrom<AST> for Statement {
     fn try_from(value: AST) -> Result<Self> {
         match value {
             AST::Stmnt(statement) => Ok(statement),
-            AST::Prog(..) => Err("Expected an Statement, but a Program was produced!".into()),
-            AST::Expr(..) => Err("Expected an Statement, but a Expression was produced!".into()),
+            bad => Err(format!("Expected Statement, but {} was produced!", bad.get_name()).into()),
         }
     }
 }
@@ -287,6 +304,14 @@ pub fn reduce_program(mut stack: Vec<ValueItem>) -> Result<Vec<ValueItem>> {
         None => return Err(format!("Missing end while trying to reduce program").into()),
     };
 
+    let statents = match stack.pop() {
+        Some(Left(AST::StmntList(list))) => list,
+        Some(bad) => return Err(format!("Expected Statement List, but found {}", bad).into()),
+        None => {
+            return Err(format!("Missing Statement List while trying to reduce program").into())
+        }
+    };
+
     match stack.pop() {
         Some(Right(Begin(_))) => (),
         Some(bad) => return Err(format!("Expected begin, but found {}", bad).into()),
@@ -311,8 +336,33 @@ pub fn reduce_program(mut stack: Vec<ValueItem>) -> Result<Vec<ValueItem>> {
         None => return Err(format!("Missing program while trying to reduce program").into()),
     };
 
-    stack.push(Left(AST::Prog(CompilationUnit { name: id })));
+    stack.push(Left(AST::Prog(CompilationUnit {
+        name: id,
+        statements: statents,
+    })));
 
+    Ok(stack)
+}
+
+pub fn reduce_statement_list(mut stack: Vec<ValueItem>) -> Result<Vec<ValueItem>> {
+    let mut statements = vec![];
+
+    loop {
+        if let Some(top) = stack.pop() {
+            if let Left(AST::Stmnt(stmnt)) = top {
+                statements.push(stmnt);
+            } else {
+                stack.push(top);
+                break;
+            }
+        } else {
+            break;
+        }
+    }
+
+    statements.reverse();
+
+    stack.push(Left(AST::StmntList(statements)));
     Ok(stack)
 }
 

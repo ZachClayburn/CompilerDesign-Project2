@@ -1,7 +1,7 @@
 use super::{ast, Either, Left, Right, Token};
 use ast::{
     reduce_assignment, reduce_binary_op, reduce_parenthetical, reduce_program,
-    reduce_unary_operator, reduce_value, ReductionOp,
+    reduce_statement_list, reduce_unary_operator, reduce_value, ReductionOp,
 };
 use log::{error, trace, warn};
 use std::collections::{HashMap, HashSet};
@@ -72,11 +72,14 @@ impl Table {
                         Right(Identifier(<_>::default())),
                         Right(Semicolon(<_>::default())),
                         Right(Begin(<_>::default())),
+                        Left(StatementList),
                         Right(End(<_>::default())),
                         Right(Dot(<_>::default())),
                         Left(Reduction(reduce_program)),
                     ],
                 ),
+                (StatementList, vec![Left(NumAssignment), Left(StatementList)]),
+                (StatementList, vec![Left(Reduction(reduce_statement_list))]),
                 (
                     NumAssignment,
                     vec![
@@ -210,20 +213,21 @@ impl Table {
         let formatted_productions = productions
             .iter()
             .map(|(lhs, rhs)| {
-                (
-                    format!("{}", lhs),
-                    if rhs.is_empty() {
+                (format!("{}", lhs), {
+                    let temp = rhs
+                        .iter()
+                        .filter_map(|item| match item {
+                            Left(Reduction(_)) => None,
+                            Left(item) => Some(format!("{}", item)),
+                            Right(item) => Some(format!("{}", item)),
+                        })
+                        .collect::<Vec<_>>();
+                    if temp.is_empty() {
                         vec!["".into()]
                     } else {
-                        rhs.iter()
-                            .filter_map(|item| match item {
-                                Left(Reduction(_)) => None,
-                                Left(item) => Some(format!("{}", item)),
-                                Right(item) => Some(format!("{}", item)),
-                            })
-                            .collect::<Vec<_>>()
-                    },
-                )
+                        temp
+                    }
+                })
             })
             .collect::<Vec<_>>();
         let production_strings = formatted_productions

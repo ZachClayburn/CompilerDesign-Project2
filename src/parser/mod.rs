@@ -125,6 +125,7 @@ where
 mod test {
     use super::*;
     use ast::*;
+    use indoc::indoc;
     use pretty_assertions::assert_eq;
 
     #[test]
@@ -454,7 +455,10 @@ mod test {
     fn minimal_program_parses_correctly() {
         let scan = Scanner::from_text("program a; begin end.");
         let out = parse(scan);
-        let expected = Ok(CompilationUnit { name: "a".into() });
+        let expected = Ok(CompilationUnit {
+            name: "a".into(),
+            statements: vec![],
+        });
         assert_eq!(out, expected);
     }
 
@@ -465,6 +469,35 @@ mod test {
         let expected = Ok(Statement::NumAssignment {
             name: "a".into(),
             expression: Expression::NumberLiteral(1),
+        });
+        assert_eq!(out, expected);
+    }
+
+    #[test]
+    fn program_with_statements_parses_correctly() {
+        let scan = Scanner::from_text(indoc! {"
+            program foo; begin
+                num a = 1 + 7;
+                num b = 2 * a;
+            end.
+        "});
+        let out = parse(scan);
+        let expected = Ok(CompilationUnit {
+            name: "foo".into(),
+            statements: vec![
+                Statement::NumAssignment {
+                    name: "a".into(),
+                    expression: Expression::NumberLiteral(8),
+                },
+                Statement::NumAssignment {
+                    name: "b".into(),
+                    expression: Expression::BinaryOperation(
+                        Box::new(Expression::NumberLiteral(2)),
+                        Operator::Multiply,
+                        Box::new(Expression::Variable("a".into())),
+                    ),
+                },
+            ],
         });
         assert_eq!(out, expected);
     }
