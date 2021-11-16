@@ -260,6 +260,7 @@ impl Scanner {
                         "array" => Ok(Token::Array(start)),
                         "procedure" => Ok(Token::Procedure(start)),
                         "num" => Ok(Token::Num(start)),
+                        "ish" => Ok(Token::Ish(start)),
                         "string" => Ok(Token::StringKeyWord(start)),
                         "return" => Ok(Token::Return(start)),
                         _ => Ok(Token::Identifier(TokenInfo {
@@ -595,6 +596,7 @@ mod tests {
             array
             procedure
             num
+            ish
             string
             return"
         });
@@ -645,12 +647,16 @@ mod tests {
                 line: 18,
                 column: 1,
             }),
-            StringKeyWord(Location {
+            Ish(Location {
                 line: 19,
                 column: 1,
             }),
-            Return(Location {
+            StringKeyWord(Location {
                 line: 20,
+                column: 1,
+            }),
+            Return(Location {
+                line: 21,
                 column: 1,
             }),
             EOF,

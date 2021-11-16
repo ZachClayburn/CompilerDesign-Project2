@@ -44,6 +44,7 @@ pub enum Token {
     Array(Location),
     Procedure(Location),
     Num(Location),
+    Ish(Location),
     StringKeyWord(Location),
     Return(Location),
     // Symbols
@@ -114,6 +115,7 @@ impl Display for Token {
             Token::Array(_) => write!(f, "Array"),
             Token::Procedure(_) => write!(f, "Procedure"),
             Token::Num(_) => write!(f, "Num"),
+            Token::Ish(_) => write!(f, "Ish"),
             Token::StringKeyWord(_) => write!(f, "String"),
             Token::Return(_) => write!(f, "Return"),
             Token::LParen(_) => write!(f, "("),
@@ -185,6 +187,7 @@ impl Token {
             | Token::Array(loc)
             | Token::Procedure(loc)
             | Token::Num(loc)
+            | Token::Ish(loc)
             | Token::StringKeyWord(loc)
             | Token::Return(loc)
             | Token::LParen(loc)
