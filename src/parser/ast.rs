@@ -129,12 +129,19 @@ pub enum Statement {
         name: String,
         expression: Expression,
     },
+    IshAssignment {
+        name: String,
+        expression: Expression,
+    },
 }
 
 impl Display for Statement {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Statement::NumAssignment { name, expression } => todo!(),
+            Statement::NumAssignment { name, expression }
+            | Statement::IshAssignment { name, expression } => {
+                write!(f, "num {} = {};", name, expression)
+            }
         }
     }
 }
