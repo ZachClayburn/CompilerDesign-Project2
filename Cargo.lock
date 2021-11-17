@@ -94,7 +94,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "compiler_design_project_2"
+name = "compiler_design"
 version = "0.1.0"
 dependencies = [
  "clap",

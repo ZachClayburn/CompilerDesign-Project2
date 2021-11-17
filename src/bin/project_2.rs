@@ -1,6 +1,6 @@
 use clap::{App, Arg, ArgGroup};
 use colored::*;
-use compiler_design_project_2::*;
+use compiler_design::*;
 use parser::parse_expression;
 use scanner::Scanner;
 use simple_logger::SimpleLogger;
