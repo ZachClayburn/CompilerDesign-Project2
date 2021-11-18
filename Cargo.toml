@@ -24,6 +24,10 @@ path = "src/bin/project_2.rs"
 test = true
 
 [[bin]]
+name = "project_3"
+path = "src/bin/project_3.rs"
+
+[[bin]]
 name = "table_viewer"
 path = "src/bin/table_viewer.rs"
 test = false
