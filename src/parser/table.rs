@@ -466,18 +466,23 @@ fn compute_lookup_table(
             first_at_beta | follow.get(non_terminal).unwrap()
         };
         for terminal in first_plus.iter().filter(|x| !x.is_empty()) {
-            lookup
-                .entry((
-                    non_terminals
-                        .iter()
-                        .position(|x| x == non_terminal)
-                        .unwrap_or_else(|| panic!("Error finding non-terminal {:?}", non_terminal)),
-                    terminals
-                        .iter()
-                        .position(|x| x == terminal)
-                        .unwrap_or_else(|| panic!("Error finding terminal {:?}", terminal)),
-                ))
-                .or_insert(productoion_num);
+            let key = (
+                non_terminals
+                    .iter()
+                    .position(|x| x == non_terminal)
+                    .unwrap_or_else(|| panic!("Error finding non-terminal {:?}", non_terminal)),
+                terminals
+                    .iter()
+                    .position(|x| x == terminal)
+                    .unwrap_or_else(|| panic!("Error finding terminal {:?}", terminal)),
+            );
+            let val_at_key = lookup.entry(key).or_insert(productoion_num);
+            if *val_at_key != productoion_num {
+                panic!(
+                    "Attpempted to add {} to ({}, {}), but {} was already present!",
+                    productoion_num, non_terminal, terminal, val_at_key
+                );
+            }
         }
     }
 
