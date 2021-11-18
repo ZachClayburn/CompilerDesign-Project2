@@ -43,10 +43,7 @@ impl Display for NonTerminal {
             NonTerminal::PowerPrime => "Power'".fmt(f),
             NonTerminal::Factor => "Factor".fmt(f),
             NonTerminal::Atom => "Atom".fmt(f),
-            NonTerminal::Reduction(_) => {
-                error!("Cannot format a reduction!");
-                Err(Error {})
-            }
+            NonTerminal::Reduction(fp) => get_reduction_name(fp).fmt(f),
         }
     }
 }

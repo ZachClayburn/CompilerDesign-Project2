@@ -67,8 +67,17 @@ where
         let next_word = scan.peek();
         loop {
             debug!(
-                "\nStack:{:?}\nValueStack:{:?}\nWord: {}\nnext Word: {:?}",
-                production_stack, value_stack, word, next_word
+                "\nStack:[{}]\nValueStack:[{}]\nWord: {}\nnext Word: {:?}",
+                production_stack
+                    .iter()
+                    .map(|i| format!("{}", i))
+                    .fold(String::new(), |acc, x| acc + &x + " ,"),
+                value_stack
+                    .iter()
+                    .map(|i| format!("{}", i))
+                    .fold(String::new(), |acc, x| acc + &x + " ,"),
+                word,
+                next_word
             );
             match production_stack.last().unwrap() {
                 Right(Token::EOF) if word == Token::EOF => match value_stack.len() {
@@ -511,9 +520,9 @@ mod test {
         let scan = Scanner::from_text("ish a = 1.0;");
         let out = parse(scan);
         let expected = Ok(Statement::IshAssignment {
-                    name: "a".into(),
-                    expression: Expression::FloatLiteral(1.0),
-                });
+            name: "a".into(),
+            expression: Expression::FloatLiteral(1.0),
+        });
         assert_eq!(out, expected);
     }
 }
