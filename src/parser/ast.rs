@@ -418,7 +418,10 @@ pub fn reduce_assignment(mut stack: Vec<ValueItem>) -> Result<Vec<ValueItem>> {
             name,
             expression,
         }))),
-        // TODO Add support for ish
+        Some(Right(Ish(_))) => stack.push(Left(AST::Stmnt(Statement::IshAssignment {
+            name,
+            expression,
+        }))),
         Some(bad) => return Err(format!("Expected Num, but found {}", bad).into()),
         None => return Err(format!("Missing Num while trying to reduce program").into()),
     };

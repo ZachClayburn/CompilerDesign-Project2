@@ -117,9 +117,10 @@ where
                         }
                     } else {
                         return Err(format!(
-                            "[{}] Unexpected token {}",
+                            "[{}] Unexpected token {} (was expecting {})",
                             word.format_location(),
-                            word
+                            word,
+                            non_terminal
                         )
                         .into());
                     }
@@ -518,7 +519,7 @@ mod test {
     #[test]
     fn floating_point_assignments_can_parse_correctly() {
         let scan = Scanner::from_text("ish a = 1.0;");
-        let out = parse(scan);
+        let out = parse((scan, NonTerminal::Assignment, Token::EOF));
         let expected = Ok(Statement::IshAssignment {
             name: "a".into(),
             expression: Expression::FloatLiteral(1.0),
