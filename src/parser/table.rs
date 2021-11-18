@@ -11,6 +11,7 @@ pub(super) enum NonTerminal {
     Prog,
     StatementList,
     Assignment,
+    ProcDeclaration,
     TypeSpec,
     Expr,
     ExprPrime,
@@ -25,12 +26,12 @@ pub(super) enum NonTerminal {
 
 impl Display for NonTerminal {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        use std::fmt::Error;
         match self {
             NonTerminal::Goal => "Goal".fmt(f),
             NonTerminal::Prog => "Prog".fmt(f),
             NonTerminal::StatementList => "StatementList".fmt(f),
             NonTerminal::Assignment => "Assignment".fmt(f),
+            NonTerminal::ProcDeclaration => "ProcDeclaration".fmt(f),
             NonTerminal::TypeSpec => "TypeSpec".fmt(f),
             NonTerminal::Expr => "Expr".fmt(f),
             NonTerminal::ExprPrime => "Expr'".fmt(f),
@@ -74,6 +75,7 @@ impl Table {
                         Left(Reduction(reduce_program)),
                     ],
                 ),
+                (StatementList, vec![Left(Assignment), Left(StatementList)]),
                 (StatementList, vec![Left(Assignment), Left(StatementList)]),
                 (StatementList, vec![Left(Reduction(reduce_statement_list))]),
                 (

@@ -6,7 +6,7 @@ mod statement;
 use super::{Either, ParseError, Result, Token};
 pub use compilation_unit::CompilationUnit;
 pub use expression::{Expression, Operator};
-pub use statement::Statement;
+pub use statement::{Param, Statement};
 use std::fmt::Display;
 
 #[derive(Debug, PartialEq)]

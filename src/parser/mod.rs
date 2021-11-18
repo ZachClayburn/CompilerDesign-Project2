@@ -526,4 +526,21 @@ mod test {
         });
         assert_eq!(out, expected);
     }
+
+    #[test]
+    fn procedures_can_parse_correctly() {
+        let scan =
+            Scanner::from_text("num procedure ident(num x) { num result = x; return result; }");
+        let out = parse((scan, NonTerminal::ProcDeclaration, Token::EOF));
+        let expected = Ok(Statement::ProcedureDeclaration {
+            name: "a".into(),
+            params: vec![Param::Num("x".into())],
+            statements: vec![Statement::NumAssignment {
+                name: "result".into(),
+                expression: Expression::Variable("x".into()),
+            }],
+            return_expression: Expression::Variable("result".into()),
+        });
+        assert_eq!(out, expected);
+    }
 }

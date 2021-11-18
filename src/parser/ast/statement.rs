@@ -11,6 +11,18 @@ pub enum Statement {
         name: String,
         expression: Expression,
     },
+    ProcedureDeclaration {
+        name: String,
+        params: Vec<Param>,
+        statements: Vec<Statement>,
+        return_expression: Expression,
+    }
+}
+
+#[derive(Debug, PartialEq)]
+pub enum Param {
+    Num(String),
+    Ish(String),
 }
 
 impl Display for Statement {
@@ -20,6 +32,7 @@ impl Display for Statement {
             | Statement::IshAssignment { name, expression } => {
                 write!(f, "num {} = {};", name, expression)
             }
+            Statement::ProcedureDeclaration { name, params, statements, return_expression } => todo!(),
         }
     }
 }
