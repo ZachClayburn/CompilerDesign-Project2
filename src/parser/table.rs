@@ -1,9 +1,6 @@
 use super::{ast, Either, Left, Right, Token};
-use ast::{
-    get_reduction_name, reduce_assignment, reduce_binary_op, reduce_parenthetical, reduce_program,
-    reduce_statement_list, reduce_unary_operator, reduce_value, ReductionOp,
-};
-use log::{error, trace, warn};
+use ast::{reductions::*, ReductionOp};
+use log::{trace, warn};
 use std::collections::{HashMap, HashSet};
 use std::fmt::Display;
 use std::mem::discriminant;
