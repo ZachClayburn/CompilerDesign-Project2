@@ -17,6 +17,7 @@ pub enum Statement {
         statements: Vec<Statement>,
         return_expression: Expression,
     },
+    ReturnStatement(Expression),
 }
 
 #[derive(Debug, PartialEq)]
@@ -37,7 +38,8 @@ impl Display for Statement {
                 params,
                 statements,
                 return_expression,
-            } => todo!(),
+            } => todo!("You need to finish Display for Procedure declarations!"),
+            Self::ReturnStatement(expr) => write!(f, "return {};", expr),
         }
     }
 }
