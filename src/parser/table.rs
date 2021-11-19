@@ -120,6 +120,7 @@ impl Table {
                         Right(LBrace(<_>::default())),
                         Left(StatementList),
                         Right(RBrace(<_>::default())),
+                        Left(Reduction(reduce_procedure_declaration))
                     ],
                 ),
                 (
@@ -128,6 +129,7 @@ impl Table {
                         Right(LParen(<_>::default())),
                         Left(ParamSpecFirst),
                         Right(RParen(<_>::default())),
+                        Left(Reduction(reduce_param_spec))
                     ],
                 ),
                 (
@@ -145,6 +147,7 @@ impl Table {
                         Right(Return(<_>::default())),
                         Left(Expr),
                         Right(Semicolon(<_>::default())),
+                        Left(Reduction(reduce_return_statement)),
                     ],
                 ),
                 (Expr, vec![Left(Term), Left(ExprPrime)]),

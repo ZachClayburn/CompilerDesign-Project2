@@ -6,7 +6,8 @@ mod statement;
 use super::{Either, ParseError, Result, Token};
 pub use compilation_unit::CompilationUnit;
 pub use expression::{Expression, Operator};
-pub use statement::{Param, Statement};
+use itertools::Itertools;
+pub use statement::{TypedVar, Statement};
 use std::fmt::Display;
 
 #[derive(Debug, PartialEq)]
@@ -15,6 +16,7 @@ pub enum AST {
     Prog(CompilationUnit),
     Stmnt(Statement),
     StmntList(Vec<Statement>),
+    ParamSpec(Vec<TypedVar>),
 }
 
 impl AST {
@@ -24,6 +26,7 @@ impl AST {
             AST::Prog(..) => "Program",
             AST::Stmnt(..) => "Statement",
             AST::StmntList(..) => "Statement List",
+            AST::ParamSpec(..) => "Param Spec",
         }
     }
 }
@@ -34,13 +37,8 @@ impl Display for AST {
             Self::Expr(expression) => write!(f, "{}", expression),
             Self::Prog(program) => write!(f, "{}", program),
             Self::Stmnt(statement) => write!(f, "{}", statement),
-            Self::StmntList(list) => write!(
-                f,
-                "{}",
-                list.iter()
-                    .map(|s| format!("{}\n", s))
-                    .fold("".to_string(), |accum, s| accum + &s)
-            ),
+            Self::StmntList(list) => write!(f, "{}", list.iter().format("\n")),
+            Self::ParamSpec(list) => write!(f, "({})", list.iter().format(", ")),
         }
     }
 }

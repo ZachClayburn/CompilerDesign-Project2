@@ -6,6 +6,7 @@ use crate::scanner::*;
 use ast::{ValueItem, AST};
 use either::Either::{self, Left, Right};
 pub use errors::ParseError;
+use itertools::Itertools;
 use log::debug;
 use std::{convert::TryFrom, iter::Peekable, mem::discriminant};
 use table::{NonTerminal, Table};
@@ -68,14 +69,8 @@ where
         loop {
             debug!(
                 "\nStack:[{}]\nValueStack:[{}]\nWord: {}\nnext Word: {:?}",
-                production_stack
-                    .iter()
-                    .map(|i| format!("{}", i))
-                    .fold(String::new(), |acc, x| acc + &x + " ,"),
-                value_stack
-                    .iter()
-                    .map(|i| format!("{}", i))
-                    .fold(String::new(), |acc, x| acc + &x + " ,"),
+                production_stack.iter().format(", "),
+                value_stack.iter().format(", "),
                 word,
                 next_word
             );
@@ -90,8 +85,9 @@ where
                     }
                     x => {
                         return Err(format!(
-                            "Expected a single value left in the value stack, but found {}",
-                            x
+                            "Expected a single value left in the value stack, but found {}: [{}]",
+                            x,
+                            value_stack.iter().format(", ")
                         )
                         .into())
                     }
@@ -534,13 +530,15 @@ mod test {
             Scanner::from_text("num procedure ident(num x) { num result = x; return result; }");
         let out = parse((scan, NonTerminal::DeclarationStatement, Token::EOF));
         let expected = Ok(Statement::ProcedureDeclaration {
-            name: "a".into(),
-            params: vec![Param::Num("x".into())],
-            statements: vec![Statement::NumAssignment {
-                name: "result".into(),
-                expression: Expression::Variable("x".into()),
-            }],
-            return_expression: Expression::Variable("result".into()),
+            name: "ident".into(),
+            params: vec![TypedVar::Num("x".into())],
+            statements: vec![
+                Statement::NumAssignment {
+                    name: "result".into(),
+                    expression: Expression::Variable("x".into()),
+                },
+                Statement::ReturnStatement(Expression::Variable("result".into())),
+            ],
         });
         assert_eq!(out, expected);
     }

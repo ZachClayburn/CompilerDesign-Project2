@@ -273,3 +273,124 @@ pub fn reduce_assignment(mut stack: Vec<ValueItem>) -> Result<Vec<ValueItem>> {
 
     Ok(stack)
 }
+
+pub fn reduce_param_spec(mut stack: Vec<ValueItem>) -> Result<Vec<ValueItem>> {
+    use Token::*;
+
+    match stack.pop() {
+        Some(Right(RParen(_))) => (),
+        Some(bad) => return Err(format!("Expected ), but found {}", bad).into()),
+        None => return Err(format!("Missing ) while trying to reduce program").into()),
+    };
+
+    let mut params = Vec::new();
+
+    loop {
+        let name = match stack.pop() {
+            Some(Right(LParen(_))) => break,
+            Some(Right(Identifier(TokenInfo { content, .. }))) => content,
+            Some(bad) => return Err(format!("Expected Identifier, but found {}", bad).into()),
+            None => return Err(format!("Missing Identifier while trying to reduce program").into()),
+        };
+        let param = match stack.pop() {
+            Some(Right(Num(_))) => TypedVar::Num(name),
+            Some(Right(Ish(_))) => TypedVar::Ish(name),
+            Some(bad) => return Err(format!("Expected num or ish, but found {}", bad).into()),
+            None => return Err(format!("Missing num or ish while trying to reduce program").into()),
+        };
+        params.push(param);
+        match stack.pop() {
+            Some(Right(LParen(_))) => break,
+            Some(Right(Comma(_))) => (),
+            Some(bad) => return Err(format!("Expected ), but found {}", bad).into()),
+            None => return Err(format!("Missing ) while trying to reduce program").into()),
+        };
+    }
+
+    params.reverse();
+
+    stack.push(Left(AST::ParamSpec(params)));
+
+    Ok(stack)
+}
+
+pub fn reduce_return_statement(mut stack: Vec<ValueItem>) -> Result<Vec<ValueItem>> {
+    use Token::*;
+
+    match stack.pop() {
+        Some(Right(Semicolon(_))) => (),
+        Some(bad) => return Err(format!("Expected ;, but found {}", bad).into()),
+        None => return Err(format!("Missing ; while trying to reduce program").into()),
+    };
+
+    let expr = match stack.pop() {
+        Some(Left(AST::Expr(expr))) => expr,
+        Some(bad) => return Err(format!("Expected Expression, but found {}", bad).into()),
+        None => return Err(format!("Missing Expression while trying to reduce program").into()),
+    };
+
+    match stack.pop() {
+        Some(Right(Return(_))) => (),
+        Some(bad) => return Err(format!("Expected Return, but found {}", bad).into()),
+        None => return Err(format!("Missing Return while trying to reduce program").into()),
+    };
+
+    stack.push(Left(AST::Stmnt(Statement::ReturnStatement(expr))));
+
+    Ok(stack)
+}
+
+pub fn reduce_procedure_declaration(mut stack: Vec<ValueItem>) -> Result<Vec<ValueItem>> {
+    use Token::*;
+
+    match stack.pop() {
+        Some(Right(RBrace(_))) => (),
+        Some(bad) => return Err(format!("Expected }}, but found {}", bad).into()),
+        None => return Err(format!("Missing }} while trying to reduce program").into()),
+    };
+
+    let statements = match stack.pop() {
+        Some(Left(AST::StmntList(list))) => list,
+        Some(bad) => return Err(format!("Expected Statement List, but found {}", bad).into()),
+        None => {
+            return Err(format!("Missing Statement List while trying to reduce program").into())
+        }
+    };
+
+    match stack.pop() {
+        Some(Right(LBrace(_))) => (),
+        Some(bad) => return Err(format!("Expected {{, but found {}", bad).into()),
+        None => return Err(format!("Missing {{ while trying to reduce program").into()),
+    };
+
+    let params = match stack.pop() {
+        Some(Left(AST::ParamSpec(list))) => list,
+        Some(bad) => return Err(format!("Expected Param Spec, but found {}", bad).into()),
+        None => return Err(format!("Missing Param Spec while trying to reduce program").into()),
+    };
+
+    let name = match stack.pop() {
+        Some(Right(Identifier(TokenInfo { content, .. }))) => content,
+        Some(bad) => return Err(format!("Expected Param Spec, but found {}", bad).into()),
+        None => return Err(format!("Missing Param Spec while trying to reduce program").into()),
+    };
+
+    match stack.pop() {
+        Some(Right(Procedure(_))) => (),
+        Some(bad) => return Err(format!("Expected procedure, but found {}", bad).into()),
+        None => return Err(format!("Missing procedure while trying to reduce program").into()),
+    };
+
+    match stack.pop() {
+        Some(Right(Num(_))) => stack.push(Left(AST::Stmnt(Statement::ProcedureDeclaration{
+            name,
+            params,
+            statements,
+        }))),
+        Some(Right(Ish(_))) => todo!(),
+        Some(bad) => return Err(format!("Expected procedure, but found {}", bad).into()),
+        None => return Err(format!("Missing procedure while trying to reduce program").into()),
+    };
+
+    Ok(stack)
+}
