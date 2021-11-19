@@ -1,4 +1,5 @@
 use super::{Expression, ParseError, Result, AST};
+use itertools::Itertools;
 use std::{convert::TryFrom, fmt::Display};
 
 #[derive(Debug, PartialEq)]
@@ -18,14 +19,26 @@ pub enum Statement {
 impl Display for Statement {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Statement::Declaration { name_and_type: name, expression } => {
+            Statement::Declaration {
+                name_and_type: name,
+                expression,
+            } => {
                 write!(f, "{} = {};", name, expression)
             }
             Statement::ProcedureDeclaration {
                 name_and_type,
                 params,
                 statements,
-            } => todo!("You need to finish Display for Procedure declarations!"),
+            } => write!(
+                f,
+                "{}({}) {{{}}}",
+                match name_and_type {
+                    TypedVar::Num(name) => format!("num procedure {}", name),
+                    TypedVar::Ish(name) => format!("ish procedure {}", name),
+                },
+                params.iter().format(", "),
+                statements.iter().format("\n")
+            ),
             Self::ReturnStatement(expr) => write!(f, "return {};", expr),
         }
     }
