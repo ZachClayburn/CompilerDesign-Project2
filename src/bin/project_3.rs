@@ -1,9 +1,9 @@
 use clap::{App, Arg, ArgGroup};
 use colored::*;
 use compiler_design::*;
-use scanner::Scanner;
-use parser::parse;
 use parser::ast::CompilationUnit;
+use parser::parse;
+use scanner::Scanner;
 use simple_logger::SimpleLogger;
 
 #[cfg(not(tarpaulin_include))]

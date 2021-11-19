@@ -1,4 +1,4 @@
-use super::{ParseError,Statement, Result, AST};
+use super::{ParseError, Result, Statement, AST};
 use std::{convert::TryFrom, fmt::Display};
 
 #[derive(Debug, PartialEq)]
@@ -23,4 +23,3 @@ impl TryFrom<AST> for CompilationUnit {
         }
     }
 }
-

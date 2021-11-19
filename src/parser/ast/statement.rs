@@ -1,4 +1,4 @@
-use super::{ParseError, Result, AST, Expression};
+use super::{Expression, ParseError, Result, AST};
 use std::{convert::TryFrom, fmt::Display};
 
 #[derive(Debug, PartialEq)]
@@ -16,7 +16,7 @@ pub enum Statement {
         params: Vec<Param>,
         statements: Vec<Statement>,
         return_expression: Expression,
-    }
+    },
 }
 
 #[derive(Debug, PartialEq)]
@@ -32,7 +32,12 @@ impl Display for Statement {
             | Statement::IshAssignment { name, expression } => {
                 write!(f, "num {} = {};", name, expression)
             }
-            Statement::ProcedureDeclaration { name, params, statements, return_expression } => todo!(),
+            Statement::ProcedureDeclaration {
+                name,
+                params,
+                statements,
+                return_expression,
+            } => todo!(),
         }
     }
 }
