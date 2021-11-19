@@ -3,16 +3,12 @@ use std::{convert::TryFrom, fmt::Display};
 
 #[derive(Debug, PartialEq)]
 pub enum Statement {
-    NumAssignment {
-        name: String,
-        expression: Expression,
-    },
-    IshAssignment {
-        name: String,
+    Declaration {
+        name_and_type: TypedVar,
         expression: Expression,
     },
     ProcedureDeclaration {
-        name: String,
+        name_and_type: TypedVar,
         params: Vec<TypedVar>,
         statements: Vec<Statement>,
     },
@@ -22,14 +18,11 @@ pub enum Statement {
 impl Display for Statement {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Statement::NumAssignment { name, expression } => {
-                write!(f, "num {} = {};", name, expression)
-            }
-            Statement::IshAssignment { name, expression } => {
-                write!(f, "Ish {} = {};", name, expression)
+            Statement::Declaration { name_and_type: name, expression } => {
+                write!(f, "{} = {};", name, expression)
             }
             Statement::ProcedureDeclaration {
-                name,
+                name_and_type,
                 params,
                 statements,
             } => todo!("You need to finish Display for Procedure declarations!"),

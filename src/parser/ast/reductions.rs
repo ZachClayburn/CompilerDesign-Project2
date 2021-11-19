@@ -13,7 +13,7 @@ pub fn get_reduction_name(function_pointer: &ReductionOp) -> &'static str {
         x if x == reduce_unary_operator => "reduce_unary_operator()",
         x if x == reduce_program => "reduce_program()",
         x if x == reduce_statement_list => "reduce_statement_list()",
-        x if x == reduce_assignment => "reduce_assignment()",
+        x if x == reduce_declaration => "reduce_assignment()",
         _ => panic!("unknown reduction"),
     }
 }
@@ -231,7 +231,7 @@ pub fn reduce_statement_list(mut stack: Vec<ValueItem>) -> Result<Vec<ValueItem>
     Ok(stack)
 }
 
-pub fn reduce_assignment(mut stack: Vec<ValueItem>) -> Result<Vec<ValueItem>> {
+pub fn reduce_declaration(mut stack: Vec<ValueItem>) -> Result<Vec<ValueItem>> {
     use Token::*;
 
     match stack.pop() {
@@ -259,12 +259,12 @@ pub fn reduce_assignment(mut stack: Vec<ValueItem>) -> Result<Vec<ValueItem>> {
     };
 
     match stack.pop() {
-        Some(Right(Num(_))) => stack.push(Left(AST::Stmnt(Statement::NumAssignment {
-            name,
+        Some(Right(Num(_))) => stack.push(Left(AST::Stmnt(Statement::Declaration {
+            name_and_type: TypedVar::Num(name),
             expression,
         }))),
-        Some(Right(Ish(_))) => stack.push(Left(AST::Stmnt(Statement::IshAssignment {
-            name,
+        Some(Right(Ish(_))) => stack.push(Left(AST::Stmnt(Statement::Declaration {
+            name_and_type: TypedVar::Ish(name),
             expression,
         }))),
         Some(bad) => return Err(format!("Expected Num, but found {}", bad).into()),
@@ -381,16 +381,18 @@ pub fn reduce_procedure_declaration(mut stack: Vec<ValueItem>) -> Result<Vec<Val
         None => return Err(format!("Missing procedure while trying to reduce program").into()),
     };
 
-    match stack.pop() {
-        Some(Right(Num(_))) => stack.push(Left(AST::Stmnt(Statement::ProcedureDeclaration{
-            name,
-            params,
-            statements,
-        }))),
-        Some(Right(Ish(_))) => todo!(),
+    let name_and_type = match stack.pop() {
+        Some(Right(Num(_))) => TypedVar::Num(name),
+        Some(Right(Ish(_))) => TypedVar::Ish(name),
         Some(bad) => return Err(format!("Expected procedure, but found {}", bad).into()),
         None => return Err(format!("Missing procedure while trying to reduce program").into()),
     };
+
+    stack.push(Left(AST::Stmnt(Statement::ProcedureDeclaration {
+        name_and_type,
+        params,
+        statements,
+    })));
 
     Ok(stack)
 }

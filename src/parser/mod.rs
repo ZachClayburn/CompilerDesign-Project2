@@ -476,8 +476,8 @@ mod test {
     fn assignment_expression_parses_correctly() {
         let scan = Scanner::from_text("num a = 1;");
         let out = parse((scan, NonTerminal::DeclarationStatement, Token::EOF));
-        let expected = Ok(Statement::NumAssignment {
-            name: "a".into(),
+        let expected = Ok(Statement::Declaration {
+            name_and_type: TypedVar::Num("a".into()),
             expression: Expression::NumberLiteral(1),
         });
         assert_eq!(out, expected);
@@ -495,12 +495,12 @@ mod test {
         let expected = Ok(CompilationUnit {
             name: "foo".into(),
             statements: vec![
-                Statement::NumAssignment {
-                    name: "a".into(),
+                Statement::Declaration {
+                    name_and_type: TypedVar::Num("a".into()),
                     expression: Expression::NumberLiteral(8),
                 },
-                Statement::NumAssignment {
-                    name: "b".into(),
+                Statement::Declaration {
+                    name_and_type: TypedVar::Num("b".into()),
                     expression: Expression::BinaryOperation(
                         Box::new(Expression::NumberLiteral(2)),
                         Operator::Multiply,
@@ -516,8 +516,8 @@ mod test {
     fn floating_point_assignments_can_parse_correctly() {
         let scan = Scanner::from_text("ish a = 1.0;");
         let out = parse((scan, NonTerminal::DeclarationStatement, Token::EOF));
-        let expected = Ok(Statement::IshAssignment {
-            name: "a".into(),
+        let expected = Ok(Statement::Declaration {
+            name_and_type: TypedVar::Ish("a".into()),
             expression: Expression::FloatLiteral(1.0),
         });
         assert_eq!(out, expected);
@@ -530,11 +530,11 @@ mod test {
             Scanner::from_text("num procedure ident(num x) { num result = x; return result; }");
         let out = parse((scan, NonTerminal::DeclarationStatement, Token::EOF));
         let expected = Ok(Statement::ProcedureDeclaration {
-            name: "ident".into(),
+            name_and_type: TypedVar::Num("ident".into()),
             params: vec![TypedVar::Num("x".into())],
             statements: vec![
-                Statement::NumAssignment {
-                    name: "result".into(),
+                Statement::Declaration {
+                    name_and_type: TypedVar::Num("result".into()),
                     expression: Expression::Variable("x".into()),
                 },
                 Statement::ReturnStatement(Expression::Variable("result".into())),
