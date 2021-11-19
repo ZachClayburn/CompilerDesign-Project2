@@ -7,7 +7,7 @@ use super::{Either, ParseError, Result, Token};
 pub use compilation_unit::CompilationUnit;
 pub use expression::{Expression, Operator};
 use itertools::Itertools;
-pub use statement::{TypedVar, Statement};
+pub use statement::{Statement, TypedVar};
 use std::fmt::Display;
 
 #[derive(Debug, PartialEq)]

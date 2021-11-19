@@ -94,7 +94,10 @@ impl Table {
                     StatementList,
                     vec![Left(DeclarationStatement), Left(StatementList)],
                 ),
-                (StatementList, vec![Left(ReturnStatement), Left(StatementList)]),
+                (
+                    StatementList,
+                    vec![Left(ReturnStatement), Left(StatementList)],
+                ),
                 (
                     DeclarationStatement,
                     vec![Left(TypeSpec), Left(Declaration)],
@@ -120,7 +123,7 @@ impl Table {
                         Right(LBrace(<_>::default())),
                         Left(StatementList),
                         Right(RBrace(<_>::default())),
-                        Left(Reduction(reduce_procedure_declaration))
+                        Left(Reduction(reduce_procedure_declaration)),
                     ],
                 ),
                 (
@@ -129,7 +132,7 @@ impl Table {
                         Right(LParen(<_>::default())),
                         Left(ParamSpecFirst),
                         Right(RParen(<_>::default())),
-                        Left(Reduction(reduce_param_spec))
+                        Left(Reduction(reduce_param_spec)),
                     ],
                 ),
                 (
