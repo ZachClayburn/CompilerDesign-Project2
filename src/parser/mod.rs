@@ -479,7 +479,7 @@ mod test {
     #[test]
     fn assignment_expression_parses_correctly() {
         let scan = Scanner::from_text("num a = 1;");
-        let out = parse((scan, NonTerminal::Assignment, Token::EOF));
+        let out = parse((scan, NonTerminal::DeclarationStatement, Token::EOF));
         let expected = Ok(Statement::NumAssignment {
             name: "a".into(),
             expression: Expression::NumberLiteral(1),
@@ -519,7 +519,7 @@ mod test {
     #[test]
     fn floating_point_assignments_can_parse_correctly() {
         let scan = Scanner::from_text("ish a = 1.0;");
-        let out = parse((scan, NonTerminal::Assignment, Token::EOF));
+        let out = parse((scan, NonTerminal::DeclarationStatement, Token::EOF));
         let expected = Ok(Statement::IshAssignment {
             name: "a".into(),
             expression: Expression::FloatLiteral(1.0),
@@ -527,11 +527,12 @@ mod test {
         assert_eq!(out, expected);
     }
 
+    // TODO test procedure w/ 0, 2+ params
     #[test]
     fn procedures_can_parse_correctly() {
         let scan =
             Scanner::from_text("num procedure ident(num x) { num result = x; return result; }");
-        let out = parse((scan, NonTerminal::ProcDeclaration, Token::EOF));
+        let out = parse((scan, NonTerminal::DeclarationStatement, Token::EOF));
         let expected = Ok(Statement::ProcedureDeclaration {
             name: "a".into(),
             params: vec![Param::Num("x".into())],
