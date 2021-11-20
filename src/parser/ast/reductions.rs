@@ -410,11 +410,19 @@ pub fn reduce_procedure_call(mut stack: Vec<ValueItem>) -> Result<Vec<ValueItem>
         None => return Err(format!("Missing ) while trying to reduce program").into()),
     };
 
-    match stack.pop() {
-        Some(Right(LParen(_))) => (),
-        Some(bad) => return Err(format!("Expected (, but found {}", bad).into()),
-        None => return Err(format!("Missing ( while trying to reduce program").into()),
-    };
+    let mut args = Vec::new();
+
+    loop {
+        let arg = match stack.pop() {
+            Some(Right(LParen(_))) => break,
+            Some(Left(AST::Expr(expr))) => expr,
+            Some(bad) => return Err(format!("Expected Expression, but found {}", bad).into()),
+            None => return Err(format!("Missing Expression while trying to reduce program").into()),
+        };
+        args.push(arg);
+    }
+
+    args.reverse();
 
     let name = match stack.pop() {
         Some(Right(Identifier(TokenInfo { content, .. }))) => content,
@@ -422,10 +430,7 @@ pub fn reduce_procedure_call(mut stack: Vec<ValueItem>) -> Result<Vec<ValueItem>
         None => return Err(format!("Missing ( while trying to reduce program").into()),
     };
 
-    stack.push(Left(AST::Expr(Expression::ProcedureCall {
-        name,
-        args: Vec::new(),
-    })));
+    stack.push(Left(AST::Expr(Expression::ProcedureCall { name, args })));
 
     Ok(stack)
 }

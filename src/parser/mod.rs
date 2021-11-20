@@ -592,4 +592,20 @@ mod test {
         };
         assert_eq!(out, expected);
     }
+
+    #[test]
+    fn procedure_call_with_one_arg_parses_correctly() {
+        use Expression::*;
+        let scan = Scanner::from_text("foo(1 + a)");
+        let out = parse_expression(scan).unwrap();
+        let expected = ProcedureCall {
+            name: "foo".into(),
+            args: vec![BinaryOperation(
+                Box::new(NumberLiteral(1)),
+                Operator::Plus,
+                Box::new(Variable("a".into())),
+            )],
+        };
+        assert_eq!(out, expected);
+    }
 }
