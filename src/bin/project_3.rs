@@ -1,6 +1,7 @@
 use clap::{App, Arg, ArgGroup};
 use colored::*;
 use compiler_design::*;
+use itertools::Itertools;
 use parser::ast::CompilationUnit;
 use parser::parse;
 use scanner::Scanner;
@@ -57,6 +58,21 @@ fn main() {
             }
         }
     } else {
-        panic!("Not a valid option, need to fix it");
+        let validation_file_name = matches.value_of("validation-file").unwrap();
+        let scan = match Scanner::from_file(validation_file_name) {
+            Ok(scan) => scan,
+            Err(err) => {
+                println!("Error opening file {}:{}", validation_file_name, err);
+                std::process::exit(1);
+            }
+        };
+        let statements = match parse::<_, CompilationUnit>(scan) {
+            Ok(CompilationUnit { statements, .. }) => statements,
+            Err(err) => {
+                println!("Error parsing file: {}", err);
+                std::process::exit(1);
+            }
+        };
+        println!("{}", statements.iter().format("\n"))
     }
 }
