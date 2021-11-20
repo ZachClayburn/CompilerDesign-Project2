@@ -39,7 +39,7 @@ impl Display for NonTerminal {
             NonTerminal::DeclarationStatement => "DeclarationStatement".fmt(f),
             NonTerminal::StatementList => "StatementList".fmt(f),
             NonTerminal::TypeSpec => "TypeSpec".fmt(f),
-            NonTerminal::VariableDeclaration => "Assignment".fmt(f),
+            NonTerminal::VariableDeclaration => "VariableDeclaration".fmt(f),
             NonTerminal::ProcDeclaration => "ProcDeclaration".fmt(f),
             NonTerminal::ParamSpec => "ParamSpec".fmt(f),
             NonTerminal::ParamSpecFirst => "ParamSpecFirst".fmt(f),
