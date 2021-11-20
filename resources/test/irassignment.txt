@@ -1,96 +1,98 @@
-num var1 = 3*4
-num var2 = 12 / 6
-num var3 = 12/6
-num var4 = 5 + 4 * 3
-num var5 = 12 + 34 * 45
-num var6 = (4 / 5)
-num var7 = 2 * 2 + 5 * 5
-num var8 = 42
-num var9 = (42)
-num var10 = ((42))
-num var11 = ( ( 42 ) )
-num var12 = 1234*5678
-num var13 = ((12-8)-3)
-num var14 = (5*(8/4))
-num var15 = (1+2) * 3
-num var16 = (((2+3)*4)+(7+(8/2)))
-num var17 = (((((9+(2*(110-(30/2))))*8)+1000)/2)+(((3*3*3*3)+1)/2))
-num var18 = -42
-num var19 = (-42)
-num var20 = ( -42)
-num var21 = -var
-num var22 = -1 * 8 / -1
-num var23 = 2-3
-num var24 = 2 - 3
-num var25 = 2 - -3
-num var26 = 2- -3
-num var27 = -2-3
-num var28 = -2- -3
-num var29 = -2 - -3
-num var30 = (-2 - -3)
-num var31 = ( -2 - -3)
-num var32 = -2-(-3)
-num var33 = -2-( -3)
-num var34 = -2 - (-3)
-num var35 = -2 - (-3 - (4))
-num var36 = -2 - (-3 - (4))
-num var37 = -2 - ( -3 -( -4))
-num var38 = -2-(-2-(-2-2))
-num var39 = -2 - (-2 - (-2 - 2))
-num var40 = -11-(-22 - (-33-(-44 - (-55 - (-66)))))
+program irassignment; begin
+num var1 = 3*4;
+num var2 = 12 / 6;
+num var3 = 12/6;
+num var4 = 5 + 4 * 3;
+num var5 = 12 + 34 * 45;
+num var6 = (4 / 5);
+num var7 = 2 * 2 + 5 * 5;
+num var8 = 42;
+num var9 = (42);
+num var10 = ((42));
+num var11 = ( ( 42 ) );
+num var12 = 1234*5678;
+num var13 = ((12-8)-3);
+num var14 = (5*(8/4));
+num var15 = (1+2) * 3;
+num var16 = (((2+3)*4)+(7+(8/2)));
+num var17 = (((((9+(2*(110-(30/2))))*8)+1000)/2)+(((3*3*3*3)+1)/2));
+num var18 = -42;
+num var19 = (-42);
+num var20 = ( -42);
+num var21 = -var;
+num var22 = -1 * 8 / -1;
+num var23 = 2-3;
+num var24 = 2 - 3;
+num var25 = 2 - -3;
+num var26 = 2- -3;
+num var27 = -2-3;
+num var28 = -2- -3;
+num var29 = -2 - -3;
+num var30 = (-2 - -3);
+num var31 = ( -2 - -3);
+num var32 = -2-(-3);
+num var33 = -2-( -3);
+num var34 = -2 - (-3);
+num var35 = -2 - (-3 - (4));
+num var36 = -2 - (-3 - (4));
+num var37 = -2 - ( -3 -( -4));
+num var38 = -2-(-2-(-2-2));
+num var39 = -2 - (-2 - (-2 - 2));
+num var40 = -11-(-22 - (-33-(-44 - (-55 - (-66)))));
 
 // Exponents
-num var41 = 3^3
-num var42 = 4 ^ 4
-num var43 = 3^3^3
-num var44 = 3^(3^3)
-num var45 = 5 + 4 * 3 ^ 2
+num var41 = 3^3;
+num var42 = 4 ^ 4;
+num var43 = 3^3^3;
+num var44 = 3^(3^3);
+num var45 = 5 + 4 * 3 ^ 2;
 
 // 32-bit floats
-ish float1 = 3.5
-ish float2 = (3.5)
-ish float3 = ((3.55))
-ish float4 = 3.14159+2.718218
+ish float1 = 3.5;
+ish float2 = (3.5);
+ish float3 = ((3.55));
+ish float4 = 3.14159+2.718218;
 
 // Prevent reuse (don't compute the last value, just report the issue and continue)
-num issue1 = 5
-num issue2 = 3 + 4
-num issue1 = 16
+num issue1 = 5;
+num issue2 = 3 + 4;
+num issue1 = 16;
 
 // Spot this issue during the IR phase
-num error = 5 / 0
+num error = 5 / 0;
 
 // Allow reuse
-num var49 = var1 + var2
-num var50 = var1 - var2
-num var51 = var2 - var1
-num var52 = var1 * var1
-num var53 = (var3 + var4) * (var5 + var3)
+num var49 = var1 + var2;
+num var50 = var1 - var2;
+num var51 = var2 - var1;
+num var52 = var1 * var1;
+num var53 = (var3 + var4) * (var5 + var3);
 
 // Allow copies
-num orig = 4 + 2
-num copy = orig
+num orig = 4 + 2;
+num copy = orig;
 
 // Support procedures
 
 num procedure add(num a, num b) {
-  num result = a + b
-  return result
+  num result = a + b;
+  return result;
 }
 
 num procedure mult(num a, num b) {
-  num result = a * b
-  return result
+  num result = a * b;
+  return result;
 }
 
-num a = 2
-num b = 3
-num result1 = add(a, b)
-num result2 = mult(a, b)
-num result3 = mult(a,a)
-num result4 = mult(b,b)
-num result5 = add(-a, -b)
-num result6 = add(a, b) - mult(a, b)
-num result7 = add(a,a) + mult(a,b) * mult(b,b)
+num a = 2;
+num b = 3;
+num result1 = add(a, b);
+num result2 = mult(a, b);
+num result3 = mult(a,a);
+num result4 = mult(b,b);
+num result5 = add(-a, -b);
+num result6 = add(a, b) - mult(a, b);
+num result7 = add(a,a) + mult(a,b) * mult(b,b);
 //Optional
-//num result8 = add((add(a,b) + mult(b,a)) + 7
+//num result8 = add((add(a,b) + mult(b,a)) + 7;
+end.
