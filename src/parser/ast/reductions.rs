@@ -13,7 +13,10 @@ pub fn get_reduction_name(function_pointer: &ReductionOp) -> &'static str {
         x if x == reduce_unary_operator => "reduce_unary_operator()",
         x if x == reduce_program => "reduce_program()",
         x if x == reduce_statement_list => "reduce_statement_list()",
-        x if x == reduce_declaration => "reduce_assignment()",
+        x if x == reduce_declaration => "reduce_declaration()",
+        x if x == reduce_param_spec => "reduce_param_spec()",
+        x if x == reduce_return_statement => "reduce_return_statement()",
+        x if x == reduce_procedure_declaration => "reduce_procedure_declaration()",
         _ => panic!("unknown reduction"),
     }
 }
