@@ -27,6 +27,7 @@ pub(super) enum NonTerminal {
     PowerPrime,
     Factor,
     Atom,
+    AtomPrime,
     Reduction(ReductionOp),
 }
 
@@ -53,6 +54,7 @@ impl Display for NonTerminal {
             NonTerminal::PowerPrime => "Power'".fmt(f),
             NonTerminal::Factor => "Factor".fmt(f),
             NonTerminal::Atom => "Atom".fmt(f),
+            NonTerminal::AtomPrime => "AtomPrime".fmt(f),
             NonTerminal::Reduction(fp) => get_reduction_name(fp).fmt(f),
         }
     }
@@ -238,14 +240,20 @@ impl Table {
                 ),
                 (
                     Atom,
-                    vec![
-                        Right(Identifier(<_>::default())),
-                        Left(Reduction(reduce_value)),
-                    ],
+                    vec![Right(Float(<_>::default())), Left(Reduction(reduce_value))],
                 ),
                 (
                     Atom,
-                    vec![Right(Float(<_>::default())), Left(Reduction(reduce_value))],
+                    vec![Right(Identifier(<_>::default())), Left(AtomPrime)],
+                ),
+                (AtomPrime, vec![Left(Reduction(reduce_value))]),
+                (
+                    AtomPrime,
+                    vec![
+                    Right(LParen(<_>::default())), 
+                    Right(RParen(<_>::default())),
+                    Left(Reduction(reduce_procedure_call))
+                    ],
                 ),
             ]
         };

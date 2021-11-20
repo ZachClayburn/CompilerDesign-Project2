@@ -1,4 +1,5 @@
 use super::{ParseError, Result, AST};
+use itertools::Itertools;
 use std::{convert::TryFrom, fmt::Display};
 
 #[derive(Debug, PartialEq)]
@@ -8,6 +9,7 @@ pub enum Expression {
     Variable(String),
     BinaryOperation(Box<Self>, Operator, Box<Self>),
     UnaryOperation(Operator, Box<Self>),
+    ProcedureCall { name: String, args: Vec<Expression> },
 }
 
 impl Display for Expression {
@@ -18,6 +20,9 @@ impl Display for Expression {
             Expression::Variable(name) => write!(f, "{}", name),
             Expression::BinaryOperation(lhs, op, rhs) => write!(f, "({} {} {})", lhs, op, rhs),
             Expression::UnaryOperation(op, exp) => write!(f, "{} {}", op, exp),
+            Self::ProcedureCall { name, args } => {
+                write!(f, "{}({})", name, args.iter().format(", "))
+            }
         }
     }
 }

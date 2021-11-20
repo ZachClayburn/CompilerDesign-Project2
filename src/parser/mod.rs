@@ -580,4 +580,16 @@ mod test {
         });
         assert_eq!(out, expected);
     }
+
+    #[test]
+    fn procedure_call_with_no_args_parses_correctly() {
+        use Expression::*;
+        let scan = Scanner::from_text("foo()");
+        let out = parse_expression(scan).unwrap();
+        let expected = ProcedureCall {
+            name: "foo".into(),
+            args: Vec::new(),
+        };
+        assert_eq!(out, expected);
+    }
 }

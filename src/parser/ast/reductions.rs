@@ -17,6 +17,7 @@ pub fn get_reduction_name(function_pointer: &ReductionOp) -> &'static str {
         x if x == reduce_param_spec => "reduce_param_spec()",
         x if x == reduce_return_statement => "reduce_return_statement()",
         x if x == reduce_procedure_declaration => "reduce_procedure_declaration()",
+        x if x == reduce_procedure_call => "reduce_procedure_call()",
         _ => panic!("unknown reduction"),
     }
 }
@@ -395,6 +396,35 @@ pub fn reduce_procedure_declaration(mut stack: Vec<ValueItem>) -> Result<Vec<Val
         name_and_type,
         params,
         statements,
+    })));
+
+    Ok(stack)
+}
+
+pub fn reduce_procedure_call(mut stack: Vec<ValueItem>) -> Result<Vec<ValueItem>> {
+    use Token::*;
+
+    match stack.pop() {
+        Some(Right(RParen(_))) => (),
+        Some(bad) => return Err(format!("Expected ), but found {}", bad).into()),
+        None => return Err(format!("Missing ) while trying to reduce program").into()),
+    };
+
+    match stack.pop() {
+        Some(Right(LParen(_))) => (),
+        Some(bad) => return Err(format!("Expected (, but found {}", bad).into()),
+        None => return Err(format!("Missing ( while trying to reduce program").into()),
+    };
+
+    let name = match stack.pop() {
+        Some(Right(Identifier(TokenInfo { content, .. }))) => content,
+        Some(bad) => return Err(format!("Expected (, but found {}", bad).into()),
+        None => return Err(format!("Missing ( while trying to reduce program").into()),
+    };
+
+    stack.push(Left(AST::Expr(Expression::ProcedureCall {
+        name,
+        args: Vec::new(),
     })));
 
     Ok(stack)
