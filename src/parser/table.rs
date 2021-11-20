@@ -143,7 +143,17 @@ impl Table {
                         Left(ParamSpecList),
                     ],
                 ),
+                (ParamSpecFirst, vec![]),
                 (ParamSpecList, vec![]),
+                (
+                    ParamSpecList,
+                    vec![
+                        Right(Comma(<_>::default())),
+                        Left(TypeSpec),
+                        Right(Identifier(<_>::default())),
+                        Left(ParamSpecList),
+                    ],
+                ),
                 (
                     ReturnStatement,
                     vec![

@@ -523,11 +523,13 @@ mod test {
         assert_eq!(out, expected);
     }
 
-    // TODO test procedure w/ 0, 2+ params
     #[test]
     fn procedures_can_parse_correctly() {
-        let scan =
-            Scanner::from_text("num procedure ident(num x) { num result = x; return result; }");
+        let scan = Scanner::from_text(indoc! {"
+            num procedure ident(num x) {
+                num result = x; return result;
+            }
+            "});
         let out = parse((scan, NonTerminal::DeclarationStatement, Token::EOF));
         let expected = Ok(Statement::ProcedureDeclaration {
             name_and_type: TypedVar::Num("ident".into()),
@@ -539,6 +541,42 @@ mod test {
                 },
                 Statement::ReturnStatement(Expression::Variable("result".into())),
             ],
+        });
+        assert_eq!(out, expected);
+    }
+
+    #[test]
+    fn procedure_with_no_params_parses_correctly() {
+        let scan = Scanner::from_text(indoc! {"
+            num procedure the_answer_to_life_the_universe_and_everything() {
+                return 42;
+            }
+            "});
+        let out = parse((scan, NonTerminal::DeclarationStatement, Token::EOF));
+        let expected = Ok(Statement::ProcedureDeclaration {
+            name_and_type: TypedVar::Num("the_answer_to_life_the_universe_and_everything".into()),
+            params: vec![],
+            statements: vec![Statement::ReturnStatement(Expression::NumberLiteral(42))],
+        });
+        assert_eq!(out, expected);
+    }
+
+    #[test]
+    fn procedure_with_two_params_parses_correctly() {
+        let scan = Scanner::from_text(indoc! {"
+            ish procedure sum(ish a, ish b) {
+                return a + b;
+            }
+            "});
+        let out = parse((scan, NonTerminal::DeclarationStatement, Token::EOF));
+        let expected = Ok(Statement::ProcedureDeclaration {
+            name_and_type: TypedVar::Ish("sum".into()),
+            params: vec![TypedVar::Ish("a".into()), TypedVar::Ish("b".into())],
+            statements: vec![Statement::ReturnStatement(Expression::BinaryOperation(
+                Box::new(Expression::Variable("a".into())),
+                Operator::Plus,
+                Box::new(Expression::Variable("b".into())),
+            ))],
         });
         assert_eq!(out, expected);
     }
