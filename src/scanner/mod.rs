@@ -431,7 +431,7 @@ mod tests {
         let block_comment_string = indoc! {"
         /* This is a block comment, I should just keep going
          * skiping whatever I see, even if I see / or *
-         * in fact the only thing that will stop me is those two 
+         * in fact the only thing that will stop me is those two
          * characters back it back likt this */
         /
         /* I should work on a single line */
