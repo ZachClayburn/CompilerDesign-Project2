@@ -420,6 +420,13 @@ pub fn reduce_procedure_call(mut stack: Vec<ValueItem>) -> Result<Vec<ValueItem>
             None => return Err(format!("Missing Expression while trying to reduce program").into()),
         };
         args.push(arg);
+
+        match stack.pop() {
+            Some(Right(Comma(_))) => (),
+            Some(Right(LParen(_))) => break,
+            Some(bad) => return Err(format!("Expected \",\", but found {}", bad).into()),
+            None => return Err(format!("Missing ) while trying to reduce program").into()),
+        };
     }
 
     args.reverse();

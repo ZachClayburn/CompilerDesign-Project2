@@ -29,6 +29,7 @@ pub(super) enum NonTerminal {
     Atom,
     AtomPrime,
     Args,
+    ArgList,
     Reduction(ReductionOp),
 }
 
@@ -57,6 +58,7 @@ impl Display for NonTerminal {
             NonTerminal::Atom => "Atom".fmt(f),
             NonTerminal::AtomPrime => "AtomPrime".fmt(f),
             NonTerminal::Args => "Args".fmt(f),
+            NonTerminal::ArgList => "ArgList".fmt(f),
             NonTerminal::Reduction(fp) => get_reduction_name(fp).fmt(f),
         }
     }
@@ -259,7 +261,12 @@ impl Table {
                     ],
                 ),
                 (Args, vec![]),
-                (Args, vec![Left(Expr)]),
+                (Args, vec![Left(Expr), Left(ArgList)]),
+                (ArgList, vec![]),
+                (
+                    ArgList,
+                    vec![Right(Comma(<_>::default())), Left(Expr), Left(ArgList)],
+                ),
             ]
         };
         let non_terminals = {
