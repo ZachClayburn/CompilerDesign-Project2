@@ -291,14 +291,6 @@ mod test {
     }
 
     #[test]
-    fn literal_expressions_can_collapse() {
-        let scan = Scanner::from_text("2*3-4+5");
-        let out = parse((scan, NonTerminal::Expr, Token::EOF));
-        let expected = Ok(Expression::NumberLiteral(7));
-        assert_eq!(out, expected);
-    }
-
-    #[test]
     fn fails_when_number_is_too_large() {
         // TODO Change this back to assuming i32 when I fix the integer type I use
         let scan = Scanner::from_text(format!("{}", (i64::MAX as i128) + 1).as_str());
@@ -372,15 +364,6 @@ mod test {
     }
 
     #[test]
-    fn floating_point_numbers_can_collapse() {
-        use Expression::*;
-        let scan = Scanner::from_text("1.0+2.0");
-        let out = parse((scan, NonTerminal::Expr, Token::EOF));
-        let expected = Ok(FloatLiteral(3.0));
-        assert_eq!(out, expected);
-    }
-
-    #[test]
     fn negative_floating_point_numbers_parse_correctly() {
         use Expression::*;
         let scan = Scanner::from_text("-12.34");
@@ -407,7 +390,11 @@ mod test {
         use Expression::*;
         let scan = Scanner::from_text("2^3");
         let out = parse((scan, NonTerminal::Expr, Token::EOF));
-        let expected = Ok(NumberLiteral(8));
+        let expected = Ok(BinaryOperation(
+            Box::new(NumberLiteral(2)),
+            Operator::Power,
+            Box::new(NumberLiteral(3)),
+        ));
         assert_eq!(out, expected);
     }
 
@@ -416,7 +403,11 @@ mod test {
         use Expression::*;
         let scan = Scanner::from_text("2.0^3.0");
         let out = parse((scan, NonTerminal::Expr, Token::EOF));
-        let expected = Ok(FloatLiteral(8.0));
+        let expected = Ok(BinaryOperation(
+            Box::new(FloatLiteral(2.0)),
+            Operator::Power,
+            Box::new(FloatLiteral(3.0)),
+        ));
         assert_eq!(out, expected);
     }
 
@@ -444,19 +435,6 @@ mod test {
             Box::new(NumberLiteral(8)),
             Operator::Power,
             Box::new(NumberLiteral(88)),
-        ));
-        assert_eq!(out, expected);
-    }
-
-    #[test]
-    fn integer_multiply_overflow_fails_gracefully() {
-        use Expression::*;
-        let scan = Scanner::from_text("20^8*20^8");
-        let out = parse((scan, NonTerminal::Expr, Token::EOF));
-        let expected = Ok(BinaryOperation(
-            Box::new(NumberLiteral(25600000000)),
-            Operator::Multiply,
-            Box::new(NumberLiteral(25600000000)),
         ));
         assert_eq!(out, expected);
     }
@@ -497,7 +475,11 @@ mod test {
             statements: vec![
                 Statement::Declaration {
                     name_and_type: TypedVar::Num("a".into()),
-                    expression: Expression::NumberLiteral(8),
+                    expression: Expression::BinaryOperation(
+                        Box::new(Expression::NumberLiteral(1)),
+                        Operator::Plus,
+                        Box::new(Expression::NumberLiteral(7)),
+                    ),
                 },
                 Statement::Declaration {
                     name_and_type: TypedVar::Num("b".into()),

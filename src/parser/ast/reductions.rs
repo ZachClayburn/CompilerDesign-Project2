@@ -2,8 +2,6 @@ use super::*;
 use crate::scanner::Token;
 use crate::scanner::TokenInfo;
 use either::{Left, Right};
-use num::checked_pow;
-use std::convert::TryInto;
 
 pub fn get_reduction_name(function_pointer: &ReductionOp) -> &'static str {
     match *function_pointer {
@@ -72,47 +70,12 @@ pub fn reduce_binary_op(mut stack: Vec<ValueItem>) -> Result<Vec<ValueItem>> {
         None => return Err("Missing ) while trying to reduce parenthetical".into()),
     };
 
-    let expr = match (lhs, rhs) {
-        (NumberLiteral(lhs), NumberLiteral(rhs)) => match op {
-            Operator::Plus => NumberLiteral(lhs + rhs),
-            Operator::Minus => NumberLiteral(lhs - rhs),
-            Operator::Multiply => lhs.checked_mul(rhs).map_or_else(
-                || {
-                    BinaryOperation(
-                        Box::new(NumberLiteral(lhs)),
-                        Operator::Multiply,
-                        Box::new(NumberLiteral(rhs)),
-                    )
-                },
-                |result| NumberLiteral(result),
-            ),
-            Operator::Power => checked_pow(lhs, rhs.try_into()?).map_or_else(
-                || {
-                    BinaryOperation(
-                        Box::new(NumberLiteral(lhs)),
-                        Operator::Power,
-                        Box::new(NumberLiteral(rhs)),
-                    )
-                },
-                |result| NumberLiteral(result),
-            ),
-            Operator::Divide if rhs != 0 => NumberLiteral(lhs / rhs),
-            op => BinaryOperation(
-                Box::new(NumberLiteral(lhs)),
-                op,
-                Box::new(NumberLiteral(rhs)),
-            ),
-        },
-        (FloatLiteral(lhs), FloatLiteral(rhs)) => match op {
-            Operator::Plus => FloatLiteral(lhs + rhs),
-            Operator::Minus => FloatLiteral(lhs - rhs),
-            Operator::Multiply => FloatLiteral(lhs * rhs),
-            Operator::Divide => FloatLiteral(lhs / rhs),
-            Operator::Power => FloatLiteral(lhs.powf(rhs)),
-        },
-        (lhs, rhs) => BinaryOperation(Box::new(lhs), op, Box::new(rhs)),
-    };
-    stack.push(Left(Expr(expr)));
+    stack.push(Left(Expr(BinaryOperation(
+        Box::new(lhs),
+        op,
+        Box::new(rhs),
+    ))));
+
     Ok(stack)
 }
 
