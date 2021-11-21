@@ -1,7 +1,8 @@
 use clap::{App, Arg, ArgGroup};
 use colored::*;
 use compiler_design::*;
-use itertools::Itertools;
+use either::{Left, Right};
+use evaluation::{evaluate, EvaluationError};
 use parser::ast::CompilationUnit;
 use parser::parse;
 use scanner::Scanner;
@@ -73,6 +74,14 @@ fn main() {
                 std::process::exit(1);
             }
         };
-        println!("{}", statements.iter().format("\n"))
+        for item in evaluate(statements) {
+            match item {
+                Left(statement) => println!("{}", statement),
+                Right(EvaluationError {
+                    bad_statement,
+                    error_msg,
+                }) => println!("{}: {}", bad_statement, error_msg),
+            }
+        }
     }
 }
