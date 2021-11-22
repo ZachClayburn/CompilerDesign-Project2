@@ -1,28 +1,91 @@
-use crate::parser::ast::Statement;
-use either::{Either, Left, Right};
+use crate::parser::ast::{Expression, Operator, Statement};
+use std::convert::TryInto;
 
 #[derive(Debug, PartialEq)]
 pub struct EvaluationError {
-    pub bad_statement: Statement,
     pub error_msg: String,
 }
 
-pub fn evaluate(statements: Vec<Statement>) -> Vec<Either<Statement, EvaluationError>> {
-    // let mut evaluated = Vec::new();
-    let evaluated = statements.into_iter().map(|x| Left(x)).collect();
+impl Into<EvaluationError> for String {
+    fn into(self) -> EvaluationError {
+        EvaluationError { error_msg: self }
+    }
+}
+
+type Result<T> = std::result::Result<T, EvaluationError>;
+
+pub fn evaluate(statements: Vec<Statement>) -> Vec<Result<Statement>> {
+    let mut evaluated = Vec::new();
+
+    for statement in statements {
+        match statement {
+            Statement::Declaration {
+                name_and_type,
+                expression,
+            } => match evaluate_expression(expression) {
+                Ok(expression) => evaluated.push(Ok(Statement::Declaration {
+                    name_and_type,
+                    expression,
+                })),
+                Err(err) => evaluated.push(Err(err)),
+            },
+            unsuported => evaluated.push(Ok(unsuported)),
+        }
+    }
+
     evaluated
+}
+
+fn evaluate_expression(expr: Expression) -> Result<Expression> {
+    use Expression::*;
+    let expr = match expr {
+        BinaryOperation(lhs, op, rhs) => match (*lhs, *rhs) {
+            (NumberLiteral(lhs), NumberLiteral(rhs)) => match op {
+                Operator::Plus => NumberLiteral(lhs + rhs),
+                Operator::Minus => NumberLiteral(lhs - rhs),
+                Operator::Multiply => {
+                    if let Some(result) = lhs.checked_mul(rhs) {
+                        NumberLiteral(result)
+                    } else {
+                        return Err(format!("Could not multiply {} and {}", lhs, rhs).into());
+                    }
+                }
+                Operator::Divide => {
+                    if let Some(result) = lhs.checked_div(rhs) {
+                        NumberLiteral(result)
+                    } else {
+                        return Err(format!("Could not divide {} by {}", lhs, rhs).into());
+                    }
+                }
+                Operator::Power => {
+                    let rhs = match rhs.try_into() {
+                        Ok(rhs) => rhs,
+                        Err(_) => {
+                            return Err(format!("{} cannot be used as an exponent", rhs).into())
+                        }
+                    };
+                    if let Some(result) = lhs.checked_pow(rhs) {
+                        NumberLiteral(result)
+                    } else {
+                        return Err(
+                            format!("Could not raise {} to the power of {}", lhs, rhs).into()
+                        );
+                    }
+                }
+            },
+            (lhs, rhs) => BinaryOperation(Box::new(lhs), op, Box::new(rhs)),
+        },
+        unsupported => unsupported,
+    };
+    Ok(expr)
 }
 
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::{
-        parser::{
-            ast::{CompilationUnit, Expression, TypedVar},
-            parse,
-        },
-        scanner::Scanner,
-    };
+    use crate::parser::ast::{CompilationUnit, Expression, TypedVar};
+    use crate::parser::parse;
+    use crate::scanner::Scanner;
     use indoc::indoc;
     use pretty_assertions::assert_eq;
 
@@ -44,23 +107,23 @@ mod test {
         let out = evaluate(parsed);
 
         let expected = vec![
-            Left(Statement::Declaration {
+            Ok(Statement::Declaration {
                 name_and_type: TypedVar::Num("a".into()),
                 expression: Expression::NumberLiteral(2),
             }),
-            Left(Statement::Declaration {
+            Ok(Statement::Declaration {
                 name_and_type: TypedVar::Num("b".into()),
                 expression: Expression::NumberLiteral(4),
             }),
-            Left(Statement::Declaration {
+            Ok(Statement::Declaration {
                 name_and_type: TypedVar::Num("c".into()),
                 expression: Expression::NumberLiteral(1),
             }),
-            Left(Statement::Declaration {
+            Ok(Statement::Declaration {
                 name_and_type: TypedVar::Num("d".into()),
                 expression: Expression::NumberLiteral(0),
             }),
-            Left(Statement::Declaration {
+            Ok(Statement::Declaration {
                 name_and_type: TypedVar::Num("e".into()),
                 expression: Expression::NumberLiteral(3125),
             }),

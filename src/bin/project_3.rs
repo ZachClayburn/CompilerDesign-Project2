@@ -1,7 +1,6 @@
 use clap::{App, Arg, ArgGroup};
 use colored::*;
 use compiler_design::*;
-use either::{Left, Right};
 use evaluation::{evaluate, EvaluationError};
 use parser::ast::CompilationUnit;
 use parser::parse;
@@ -76,11 +75,8 @@ fn main() {
         };
         for item in evaluate(statements) {
             match item {
-                Left(statement) => println!("{}", statement),
-                Right(EvaluationError {
-                    bad_statement,
-                    error_msg,
-                }) => println!("{}: {}", bad_statement, error_msg),
+                Ok(statement) => println!("{}", statement),
+                Err(EvaluationError { error_msg }) => println!("{}", error_msg),
             }
         }
     }
