@@ -73,6 +73,13 @@ fn evaluate_expression(expr: Expression) -> Result<Expression> {
                     }
                 }
             },
+            (FloatLiteral(lhs), FloatLiteral(rhs)) => match op {
+                Operator::Plus => FloatLiteral(lhs + rhs),
+                Operator::Minus => FloatLiteral(lhs - rhs),
+                Operator::Multiply => FloatLiteral(lhs * rhs),
+                Operator::Divide => FloatLiteral(lhs / rhs),
+                Operator::Power => FloatLiteral(lhs.powf(rhs)),
+            },
             (lhs, rhs) => BinaryOperation(Box::new(lhs), op, Box::new(rhs)),
         },
         unsupported => unsupported,
@@ -126,6 +133,49 @@ mod test {
             Ok(Statement::Declaration {
                 name_and_type: TypedVar::Num("e".into()),
                 expression: Expression::NumberLiteral(3125),
+            }),
+        ];
+
+        assert_eq!(out, expected);
+    }
+
+    #[test]
+    fn simple_float_math_statements_can_be_evaluated() {
+        let scan = Scanner::from_text(indoc! {"
+            program test; begin
+            ish a = 1.0 + 1.0;
+            ish b = 2.0 * 2.0;
+            ish c = 3.0 / 3.0;
+            ish d = 4.0 - 4.0;
+            ish e = 5.0 ^ 5.0;
+            end.
+        "});
+        let CompilationUnit {
+            statements: parsed, ..
+        } = parse(scan).unwrap();
+
+        let out = evaluate(parsed);
+
+        let expected = vec![
+            Ok(Statement::Declaration {
+                name_and_type: TypedVar::Ish("a".into()),
+                expression: Expression::FloatLiteral(2.0),
+            }),
+            Ok(Statement::Declaration {
+                name_and_type: TypedVar::Ish("b".into()),
+                expression: Expression::FloatLiteral(4.0),
+            }),
+            Ok(Statement::Declaration {
+                name_and_type: TypedVar::Ish("c".into()),
+                expression: Expression::FloatLiteral(1.0),
+            }),
+            Ok(Statement::Declaration {
+                name_and_type: TypedVar::Ish("d".into()),
+                expression: Expression::FloatLiteral(0.0),
+            }),
+            Ok(Statement::Declaration {
+                name_and_type: TypedVar::Ish("e".into()),
+                expression: Expression::FloatLiteral(3125.0),
             }),
         ];
 
