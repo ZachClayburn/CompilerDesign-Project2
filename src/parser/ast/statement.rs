@@ -31,13 +31,13 @@ impl Display for Statement {
                 statements,
             } => write!(
                 f,
-                "{}({}) {{{}}}",
+                "{}({}) {{\n    {}\n}}",
                 match name_and_type {
                     TypedVar::Num(name) => format!("num procedure {}", name),
                     TypedVar::Ish(name) => format!("ish procedure {}", name),
                 },
                 params.iter().format(", "),
-                statements.iter().format("\n")
+                statements.iter().format("\n    ")
             ),
             Self::ReturnStatement(expr) => write!(f, "return {};", expr),
         }
