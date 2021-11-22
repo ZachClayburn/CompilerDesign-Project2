@@ -39,49 +39,53 @@ pub fn evaluate(statements: Vec<Statement>) -> Vec<Result<Statement>> {
 fn evaluate_expression(expr: Expression) -> Result<Expression> {
     use Expression::*;
     let expr = match expr {
-        BinaryOperation(lhs, op, rhs) => match (*lhs, *rhs) {
-            (NumberLiteral(lhs), NumberLiteral(rhs)) => match op {
-                Operator::Plus => NumberLiteral(lhs + rhs),
-                Operator::Minus => NumberLiteral(lhs - rhs),
-                Operator::Multiply => {
-                    if let Some(result) = lhs.checked_mul(rhs) {
-                        NumberLiteral(result)
-                    } else {
-                        return Err(format!("Could not multiply {} and {}", lhs, rhs).into());
-                    }
-                }
-                Operator::Divide => {
-                    if let Some(result) = lhs.checked_div(rhs) {
-                        NumberLiteral(result)
-                    } else {
-                        return Err(format!("Could not divide {} by {}", lhs, rhs).into());
-                    }
-                }
-                Operator::Power => {
-                    let rhs = match rhs.try_into() {
-                        Ok(rhs) => rhs,
-                        Err(_) => {
-                            return Err(format!("{} cannot be used as an exponent", rhs).into())
+        BinaryOperation(lhs, op, rhs) => {
+            let lhs = evaluate_expression(*lhs)?;
+            let rhs = evaluate_expression(*rhs)?;
+            match (lhs, rhs) {
+                (NumberLiteral(lhs), NumberLiteral(rhs)) => match op {
+                    Operator::Plus => NumberLiteral(lhs + rhs),
+                    Operator::Minus => NumberLiteral(lhs - rhs),
+                    Operator::Multiply => {
+                        if let Some(result) = lhs.checked_mul(rhs) {
+                            NumberLiteral(result)
+                        } else {
+                            return Err(format!("Could not multiply {} and {}", lhs, rhs).into());
                         }
-                    };
-                    if let Some(result) = lhs.checked_pow(rhs) {
-                        NumberLiteral(result)
-                    } else {
-                        return Err(
-                            format!("Could not raise {} to the power of {}", lhs, rhs).into()
-                        );
                     }
-                }
-            },
-            (FloatLiteral(lhs), FloatLiteral(rhs)) => match op {
-                Operator::Plus => FloatLiteral(lhs + rhs),
-                Operator::Minus => FloatLiteral(lhs - rhs),
-                Operator::Multiply => FloatLiteral(lhs * rhs),
-                Operator::Divide => FloatLiteral(lhs / rhs),
-                Operator::Power => FloatLiteral(lhs.powf(rhs)),
-            },
-            (lhs, rhs) => BinaryOperation(Box::new(lhs), op, Box::new(rhs)),
-        },
+                    Operator::Divide => {
+                        if let Some(result) = lhs.checked_div(rhs) {
+                            NumberLiteral(result)
+                        } else {
+                            return Err(format!("Could not divide {} by {}", lhs, rhs).into());
+                        }
+                    }
+                    Operator::Power => {
+                        let rhs = match rhs.try_into() {
+                            Ok(rhs) => rhs,
+                            Err(_) => {
+                                return Err(format!("{} cannot be used as an exponent", rhs).into())
+                            }
+                        };
+                        if let Some(result) = lhs.checked_pow(rhs) {
+                            NumberLiteral(result)
+                        } else {
+                            return Err(
+                                format!("Could not raise {} to the power of {}", lhs, rhs).into()
+                            );
+                        }
+                    }
+                },
+                (FloatLiteral(lhs), FloatLiteral(rhs)) => match op {
+                    Operator::Plus => FloatLiteral(lhs + rhs),
+                    Operator::Minus => FloatLiteral(lhs - rhs),
+                    Operator::Multiply => FloatLiteral(lhs * rhs),
+                    Operator::Divide => FloatLiteral(lhs / rhs),
+                    Operator::Power => FloatLiteral(lhs.powf(rhs)),
+                },
+                (lhs, rhs) => BinaryOperation(Box::new(lhs), op, Box::new(rhs)),
+            }
+        }
         unsupported => unsupported,
     };
     Ok(expr)
@@ -176,6 +180,34 @@ mod test {
             Ok(Statement::Declaration {
                 name_and_type: TypedVar::Ish("e".into()),
                 expression: Expression::FloatLiteral(3125.0),
+            }),
+        ];
+
+        assert_eq!(out, expected);
+    }
+
+    #[test]
+    fn nested_expressions_can_be_evaluated() {
+        let scan = Scanner::from_text(indoc! {"
+            program test; begin
+            num a = 1 + 1 + 1;
+            ish b = 2.0 + 4.0 / 2.0;
+            end.
+        "});
+        let CompilationUnit {
+            statements: parsed, ..
+        } = parse(scan).unwrap();
+
+        let out = evaluate(parsed);
+
+        let expected = vec![
+            Ok(Statement::Declaration {
+                name_and_type: TypedVar::Num("a".into()),
+                expression: Expression::NumberLiteral(3),
+            }),
+            Ok(Statement::Declaration {
+                name_and_type: TypedVar::Ish("b".into()),
+                expression: Expression::FloatLiteral(4.0),
             }),
         ];
 
