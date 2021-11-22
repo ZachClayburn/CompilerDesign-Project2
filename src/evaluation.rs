@@ -1,5 +1,8 @@
+mod symbol_table;
+
 use crate::parser::ast::{Expression, Operator, Statement};
 use std::convert::TryInto;
+use symbol_table::{SymbolTable, TableItem};
 
 #[derive(Debug, PartialEq)]
 pub struct EvaluationError {
@@ -16,32 +19,40 @@ type Result<T> = std::result::Result<T, EvaluationError>;
 
 pub fn evaluate(statements: Vec<Statement>) -> Vec<Result<Statement>> {
     let mut evaluated = Vec::new();
+    let mut symbols = SymbolTable::new();
 
     for statement in statements {
-        match statement {
+        let result = match statement {
             Statement::Declaration {
                 name_and_type,
                 expression,
-            } => match evaluate_expression(expression) {
-                Ok(expression) => evaluated.push(Ok(Statement::Declaration {
-                    name_and_type,
-                    expression,
-                })),
-                Err(err) => evaluated.push(Err(err)),
+            } => match evaluate_expression(expression, &symbols) {
+                Ok(expression) => {
+                    if let Err(err) = symbols.add_value(&name_and_type, &expression) {
+                        evaluated.push(Err(err));
+                        continue;
+                    }
+                    Ok(Statement::Declaration {
+                        name_and_type,
+                        expression,
+                    })
+                }
+                Err(err) => Err(err),
             },
-            unsuported => evaluated.push(Ok(unsuported)),
-        }
+            unsuported => Ok(unsuported),
+        };
+        evaluated.push(result);
     }
 
     evaluated
 }
 
-fn evaluate_expression(expr: Expression) -> Result<Expression> {
+fn evaluate_expression(expr: Expression, symbols: &SymbolTable) -> Result<Expression> {
     use Expression::*;
     let expr = match expr {
         BinaryOperation(lhs, op, rhs) => {
-            let lhs = evaluate_expression(*lhs)?;
-            let rhs = evaluate_expression(*rhs)?;
+            let lhs = evaluate_expression(*lhs, &symbols)?;
+            let rhs = evaluate_expression(*rhs, &symbols)?;
             match (lhs, rhs) {
                 (NumberLiteral(lhs), NumberLiteral(rhs)) => match op {
                     Operator::Plus => NumberLiteral(lhs + rhs),
@@ -86,6 +97,10 @@ fn evaluate_expression(expr: Expression) -> Result<Expression> {
                 (lhs, rhs) => BinaryOperation(Box::new(lhs), op, Box::new(rhs)),
             }
         }
+        Variable(name) => match symbols.get_value(&name)? {
+            TableItem::NumVariable(val) => NumberLiteral((*val).into()), // TODO remove this when I fix the types
+            TableItem::IshVariable(val) => FloatLiteral(*val),
+        },
         unsupported => unsupported,
     };
     Ok(expr)
@@ -208,6 +223,54 @@ mod test {
             Ok(Statement::Declaration {
                 name_and_type: TypedVar::Ish("b".into()),
                 expression: Expression::FloatLiteral(4.0),
+            }),
+        ];
+
+        assert_eq!(out, expected);
+    }
+
+    #[test]
+    fn variables_can_be_evaluated() {
+        let scan = Scanner::from_text(indoc! {"
+            program test; begin
+            num a = 1;
+            num b = 2;
+            num c = a + b;
+            ish aish = 1.0;
+            ish bish = 2.0;
+            ish cish = aish + bish;
+            end.
+        "});
+        let CompilationUnit {
+            statements: parsed, ..
+        } = parse(scan).unwrap();
+
+        let out = evaluate(parsed);
+
+        let expected = vec![
+            Ok(Statement::Declaration {
+                name_and_type: TypedVar::Num("a".into()),
+                expression: Expression::NumberLiteral(1),
+            }),
+            Ok(Statement::Declaration {
+                name_and_type: TypedVar::Num("b".into()),
+                expression: Expression::NumberLiteral(2),
+            }),
+            Ok(Statement::Declaration {
+                name_and_type: TypedVar::Num("c".into()),
+                expression: Expression::NumberLiteral(3),
+            }),
+            Ok(Statement::Declaration {
+                name_and_type: TypedVar::Ish("aish".into()),
+                expression: Expression::FloatLiteral(1.0),
+            }),
+            Ok(Statement::Declaration {
+                name_and_type: TypedVar::Ish("bish".into()),
+                expression: Expression::FloatLiteral(2.0),
+            }),
+            Ok(Statement::Declaration {
+                name_and_type: TypedVar::Ish("cish".into()),
+                expression: Expression::FloatLiteral(3.0),
             }),
         ];
 

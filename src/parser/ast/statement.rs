@@ -55,7 +55,7 @@ impl TryFrom<AST> for Statement {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq, Hash)]
 pub enum TypedVar {
     Num(String),
     Ish(String),
