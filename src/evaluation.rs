@@ -103,6 +103,14 @@ fn evaluate_expression(expr: Expression, symbols: &SymbolTable) -> Result<Expres
         },
         NumberLiteral(num) => NumberLiteral(num),
         FloatLiteral(num) => FloatLiteral(num),
+        UnaryOperation(Operator::Minus, boxed_expr) => {
+            let expression = evaluate_expression(*boxed_expr, &symbols)?;
+            match expression {
+                NumberLiteral(num) => NumberLiteral(-num),
+                FloatLiteral(num) => FloatLiteral(-num),
+                bad_expr => return Err(format!("Cannot negate {}", bad_expr).into()),
+            }
+        }
         unsupported => {
             return Err(format!(
                 "Attempting to evaluate unsupported expression {}",
@@ -237,6 +245,26 @@ mod test {
         assert_eq!(out, expected);
     }
 
+    #[test]
+    fn negatives_can_be_evaluated() {
+        let scan = Scanner::from_text(indoc! {"
+            program test; begin
+            num a = -1;
+            end.
+        "});
+        let CompilationUnit {
+            statements: parsed, ..
+        } = parse(scan).unwrap();
+
+        let out = evaluate(parsed);
+
+        let expected = vec![Ok(Statement::Declaration {
+            name_and_type: TypedVar::Num("a".into()),
+            expression: Expression::NumberLiteral(-1),
+        })];
+
+        assert_eq!(out, expected);
+    }
     #[test]
     fn variables_can_be_evaluated() {
         let scan = Scanner::from_text(indoc! {"
