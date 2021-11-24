@@ -36,6 +36,12 @@ impl SymbolTable {
     }
 
     pub fn get_value(&self, name: &String) -> Result<&TableItem> {
+        for Scope { table, .. } in self.scope_tables.iter().rev() {
+            if let Some(val) = table.get(name) {
+                return Ok(val);
+            }
+        }
+
         match self.table.get(name) {
             Some(val) => Ok(val),
             None => Err(format!("Unkown symbol {}", name).into()),
@@ -43,6 +49,15 @@ impl SymbolTable {
     }
 
     fn add_item(&mut self, name: &String, item: TableItem) -> Result<()> {
+        if let Some(Scope { table, .. }) = self.scope_tables.last_mut() {
+            if table.contains_key(name) {
+                return Err(format!("symbol {} is already in use", name).into());
+            } else {
+                table.entry(name.to_string()).or_insert(item);
+                return Ok(());
+            };
+        }
+
         if self.table.contains_key(name) {
             Err(format!("symbol {} is already in use", name).into())
         } else {

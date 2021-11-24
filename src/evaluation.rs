@@ -207,6 +207,7 @@ fn evaluate_procedure_call(
     } else {
         Err("No return statement found!".to_string().into())
     };
+    let return_value = evaluate_expression(return_value?, symbols);
     symbols.pop_scope()?;
     return_value
 }
@@ -427,6 +428,42 @@ mod test {
             Ok(Statement::Declaration {
                 name_and_type: TypedVar::Num("a".into()),
                 expression: Expression::NumberLiteral(0),
+            }),
+        ];
+
+        assert_eq!(out, expected);
+    }
+
+    #[test]
+    fn can_evaluate_procedures_with_params() {
+        let scan = Scanner::from_text(indoc! {"
+            program test; begin
+                num a = 1;
+                num procedure identity(num a) {
+                    return a;
+                }
+                num b = identity(2);
+            end.
+        "});
+        let CompilationUnit {
+            statements: parsed, ..
+        } = parse(scan).unwrap();
+
+        let out = evaluate(parsed);
+
+        let expected = vec![
+            Ok(Statement::Declaration {
+                name_and_type: TypedVar::Num("a".into()),
+                expression: Expression::NumberLiteral(1),
+            }),
+            Ok(Statement::ProcedureDeclaration {
+                name_and_type: TypedVar::Num("identity".into()),
+                params: vec![TypedVar::Num("a".into())],
+                statements: vec![Statement::ReturnStatement(Expression::Variable("a".into()))],
+            }),
+            Ok(Statement::Declaration {
+                name_and_type: TypedVar::Num("b".into()),
+                expression: Expression::NumberLiteral(2),
             }),
         ];
 
