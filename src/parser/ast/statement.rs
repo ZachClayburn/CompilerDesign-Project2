@@ -2,7 +2,7 @@ use super::{Expression, ParseError, Result, AST};
 use itertools::Itertools;
 use std::{convert::TryFrom, fmt::Display};
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Statement {
     Declaration {
         name_and_type: TypedVar,
@@ -55,7 +55,7 @@ impl TryFrom<AST> for Statement {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Hash)]
+#[derive(Debug, PartialEq, Eq, Hash, Clone)]
 pub enum TypedVar {
     Num(String),
     Ish(String),

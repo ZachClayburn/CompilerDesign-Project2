@@ -2,7 +2,7 @@ use super::{ParseError, Result, AST};
 use itertools::Itertools;
 use std::{convert::TryFrom, fmt::Display};
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Expression {
     NumberLiteral(i64), // TODO Switch this back to i32 when I can gracefully fail at exponetiation
     FloatLiteral(f32),
@@ -38,7 +38,7 @@ impl TryFrom<AST> for Expression {
     }
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum Operator {
     Plus,
     Minus,

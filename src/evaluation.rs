@@ -1,10 +1,10 @@
 mod symbol_table;
 
-use crate::parser::ast::{Expression, Operator, Statement};
+use crate::parser::ast::{Expression, Operator, Statement, TypedVar};
 use std::convert::TryInto;
 use symbol_table::{SymbolTable, TableItem};
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct EvaluationError {
     pub error_msg: String,
 }
@@ -18,17 +18,23 @@ impl Into<EvaluationError> for String {
 type Result<T> = std::result::Result<T, EvaluationError>;
 
 pub fn evaluate(statements: Vec<Statement>) -> Vec<Result<Statement>> {
-    let mut evaluated = Vec::new();
     let mut symbols = SymbolTable::new();
+    evaluate_statments(statements, &mut symbols)
+}
 
+fn evaluate_statments(
+    statements: Vec<Statement>,
+    symbols: &mut SymbolTable,
+) -> Vec<Result<Statement>> {
+    let mut evaluated = Vec::new();
     for statement in statements {
         let result = match statement {
             Statement::Declaration {
                 name_and_type,
                 expression,
-            } => match evaluate_expression(expression, &symbols) {
+            } => match evaluate_expression(expression, symbols) {
                 Ok(expression) => {
-                    if let Err(err) = symbols.add_value(&name_and_type, &expression) {
+                    if let Err(err) = symbols.add_expression(&name_and_type, &expression) {
                         evaluated.push(Err(err));
                         continue;
                     }
@@ -39,6 +45,22 @@ pub fn evaluate(statements: Vec<Statement>) -> Vec<Result<Statement>> {
                 }
                 Err(err) => Err(err),
             },
+            Statement::ProcedureDeclaration {
+                name_and_type,
+                params,
+                statements,
+            } => {
+                if let Err(err) =
+                    symbols.add_procedure(&name_and_type, params.to_vec(), statements.to_vec())
+                {
+                    evaluated.push(Err(err));
+                }
+                Ok(Statement::ProcedureDeclaration {
+                    name_and_type,
+                    params,
+                    statements,
+                })
+            }
             unsuported => Ok(unsuported),
         };
         evaluated.push(result);
@@ -47,12 +69,12 @@ pub fn evaluate(statements: Vec<Statement>) -> Vec<Result<Statement>> {
     evaluated
 }
 
-fn evaluate_expression(expr: Expression, symbols: &SymbolTable) -> Result<Expression> {
+fn evaluate_expression(expr: Expression, mut symbols: &mut SymbolTable) -> Result<Expression> {
     use Expression::*;
     let expr = match expr {
         BinaryOperation(lhs, op, rhs) => {
-            let lhs = evaluate_expression(*lhs, &symbols)?;
-            let rhs = evaluate_expression(*rhs, &symbols)?;
+            let lhs = evaluate_expression(*lhs, &mut symbols)?;
+            let rhs = evaluate_expression(*rhs, &mut symbols)?;
             match (lhs, rhs) {
                 (NumberLiteral(lhs), NumberLiteral(rhs)) => match op {
                     Operator::Plus => NumberLiteral(lhs + rhs),
@@ -100,17 +122,32 @@ fn evaluate_expression(expr: Expression, symbols: &SymbolTable) -> Result<Expres
         Variable(name) => match symbols.get_value(&name)? {
             TableItem::NumVariable(val) => NumberLiteral((*val).into()), // TODO remove this when I fix the types
             TableItem::IshVariable(val) => FloatLiteral(*val),
+            TableItem::NumProcedure { .. } => todo!(),
+            TableItem::IshProcedure { .. } => todo!(),
         },
         NumberLiteral(num) => NumberLiteral(num),
         FloatLiteral(num) => FloatLiteral(num),
         UnaryOperation(Operator::Minus, boxed_expr) => {
-            let expression = evaluate_expression(*boxed_expr, &symbols)?;
+            let expression = evaluate_expression(*boxed_expr, symbols)?;
             match expression {
                 NumberLiteral(num) => NumberLiteral(-num),
                 FloatLiteral(num) => FloatLiteral(-num),
                 bad_expr => return Err(format!("Cannot negate {}", bad_expr).into()),
             }
         }
+        ProcedureCall { name, args } => match symbols.get_value(&name)? {
+            TableItem::NumProcedure { params, statements } => {
+                let params = params.clone();
+                let statements = statements.clone();
+                evaluate_procedure_call(ProcedureType::Num, args, params, statements, &mut symbols)?
+            }
+            TableItem::IshProcedure { params, statements } => {
+                let params = params.clone();
+                let statements = statements.clone();
+                evaluate_procedure_call(ProcedureType::Ish, args, params, statements, symbols)?
+            }
+            _ => return Err(format!("{} is value, but is called as a procedure", name).into()),
+        },
         unsupported => {
             return Err(format!(
                 "Attempting to evaluate unsupported expression {}",
@@ -120,6 +157,58 @@ fn evaluate_expression(expr: Expression, symbols: &SymbolTable) -> Result<Expres
         }
     };
     Ok(expr)
+}
+
+enum ProcedureType {
+    Num,
+    Ish,
+}
+
+fn evaluate_procedure_call(
+    return_type: ProcedureType,
+    args: Vec<Expression>,
+    params: Vec<TypedVar>,
+    statements: Vec<Statement>,
+    symbols: &mut SymbolTable,
+) -> Result<Expression> {
+    if params.len() != args.len() {
+        return Err(format!(
+            "Expected {} arguments, but found {}",
+            params.len(),
+            args.len()
+        )
+        .into());
+    }
+
+    let mut args_eval = Vec::new();
+    for arg in args {
+        args_eval.push(evaluate_expression(arg, symbols)?);
+    }
+
+    symbols.push_scope(return_type);
+    for (arg, param) in args_eval.iter().zip(params) {
+        symbols.add_expression(&param, arg)?;
+    }
+
+    let evaluated = evaluate_statments(statements, symbols);
+
+    if let Some(err) = evaluated.iter().find_map(|x| x.as_ref().err()) {
+        return Err(err.clone());
+    };
+
+    let return_value = if let Some(expr) = evaluated.iter().find_map(|x| {
+        if let Ok(Statement::ReturnStatement(expr)) = x {
+            Some(expr)
+        } else {
+            None
+        }
+    }) {
+        Ok(expr.clone())
+    } else {
+        Err("No return statement found!".to_string().into())
+    };
+    symbols.pop_scope()?;
+    return_value
 }
 
 #[cfg(test)]
@@ -307,6 +396,37 @@ mod test {
             Ok(Statement::Declaration {
                 name_and_type: TypedVar::Ish("cish".into()),
                 expression: Expression::FloatLiteral(3.0),
+            }),
+        ];
+
+        assert_eq!(out, expected);
+    }
+
+    #[test]
+    fn can_evaluate_simple_procedures() {
+        let scan = Scanner::from_text(indoc! {"
+            program test; begin
+                num procedure zero() {
+                    return 0;
+                }
+                num a = zero();
+            end.
+        "});
+        let CompilationUnit {
+            statements: parsed, ..
+        } = parse(scan).unwrap();
+
+        let out = evaluate(parsed);
+
+        let expected = vec![
+            Ok(Statement::ProcedureDeclaration {
+                name_and_type: TypedVar::Num("zero".into()),
+                params: vec![],
+                statements: vec![Statement::ReturnStatement(Expression::NumberLiteral(0))],
+            }),
+            Ok(Statement::Declaration {
+                name_and_type: TypedVar::Num("a".into()),
+                expression: Expression::NumberLiteral(0),
             }),
         ];
 
