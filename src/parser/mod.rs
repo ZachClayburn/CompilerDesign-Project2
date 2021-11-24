@@ -326,7 +326,7 @@ mod test {
         use Expression::*;
         let scan = Scanner::from_text("-1");
         let out = parse((scan, NonTerminal::Expr, Token::EOF));
-        let expected = Ok(NumberLiteral(-1));
+        let expected = Ok(UnaryOperation(Operator::Minus, Box::new(NumberLiteral(1))));
         assert_eq!(out, expected);
     }
 
@@ -368,7 +368,10 @@ mod test {
         use Expression::*;
         let scan = Scanner::from_text("-12.34");
         let out = parse((scan, NonTerminal::Expr, Token::EOF));
-        let expected = Ok(FloatLiteral(-12.34));
+        let expected = Ok(UnaryOperation(
+            Operator::Minus,
+            Box::new(FloatLiteral(12.34)),
+        ));
         assert_eq!(out, expected);
     }
 

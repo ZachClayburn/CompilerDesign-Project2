@@ -113,11 +113,10 @@ pub fn reduce_unary_operator(mut stack: Vec<ValueItem>) -> Result<Vec<ValueItem>
         None => return Err("Missing - while trying to reduce unary operator".into()),
     };
 
-    stack.push(Left(Expr(match expr {
-        Expression::NumberLiteral(value) => Expression::NumberLiteral(-value),
-        Expression::FloatLiteral(value) => Expression::FloatLiteral(-value),
-        exp => Expression::UnaryOperation(Operator::Minus, Box::new(exp)),
-    })));
+    stack.push(Left(Expr(Expression::UnaryOperation(
+        Operator::Minus,
+        Box::new(expr),
+    ))));
     Ok(stack)
 }
 
