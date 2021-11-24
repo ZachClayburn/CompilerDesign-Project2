@@ -101,7 +101,15 @@ fn evaluate_expression(expr: Expression, symbols: &SymbolTable) -> Result<Expres
             TableItem::NumVariable(val) => NumberLiteral((*val).into()), // TODO remove this when I fix the types
             TableItem::IshVariable(val) => FloatLiteral(*val),
         },
-        unsupported => unsupported,
+        NumberLiteral(num) => NumberLiteral(num),
+        FloatLiteral(num) => FloatLiteral(num),
+        unsupported => {
+            return Err(format!(
+                "Attempting to evaluate unsupported expression {}",
+                unsupported
+            )
+            .into())
+        }
     };
     Ok(expr)
 }

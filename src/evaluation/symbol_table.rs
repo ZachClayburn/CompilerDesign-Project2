@@ -33,9 +33,14 @@ impl SymbolTable {
                 if self.table.contains_key(name) {
                     Err(format!("symbol {} is already in use", name).into())
                 } else {
-                    self.table // TODO Fix this when I fix the types
+                    // TODO Fix this when I fix the types
+                    let num: i32 = match (*num).try_into() {
+                        Ok(num) => num,
+                        Err(err) => return Err(format!("Error processing {}: {}", num, err).into()),
+                    };
+                    self.table
                         .entry(name.to_string())
-                        .or_insert(TableItem::NumVariable((*num).try_into().unwrap()));
+                        .or_insert(TableItem::NumVariable(num));
                     Ok(())
                 }
             }
@@ -49,7 +54,11 @@ impl SymbolTable {
                     Ok(())
                 }
             }
-            _ => todo!(),
+            (bad_name, bad_value) => Err(format!(
+                "Adding {} = {} to the symbol table not allowed",
+                bad_name, bad_value,
+            )
+            .into()),
         }
     }
 }
