@@ -1,221 +1,223 @@
+program assembly_1; begin
 
 
-num var1 = 3*4
-printNum var1
-num var2 = 12 / 6
-printNum var2
-num var3 = 12/6
-printNum var3
-num var4 = 5 + 4 * 3
-printNum var4
-num var5 = 12 + 34 * 45
-printNum var5
-num var6 = (4 / 5)
-printNum var6
-num var7 = 2 * 2 + 5 * 5
-printNum var7
-num var8 = 42
-printNum var8
-num var9 = (42)
-printNum var9
-num var10 = ((42))
-printNum var10
-num var11 = ( ( 42 ) )
-printNum var11
-num var12 = 1234*5678
-printNum var12
-num var13 = ((12-8)-3)
-printNum var13
-num var14 = (5*(8/4))
-printNum var14
-num var15 = (1+2) * 3
-printNum var15
-num var16 = (((2+3)*4)+(7+(8/2)))
-printNum var16
-num var17 = (((((9+(2*(110-(30/2))))*8)+1000)/2)+(((3*3*3*3)+1)/2))
-printNum var17
-num var18 = -42
-printNum var18
-num var19 = (-42)
-printNum var19
-num var20 = ( -42)
-printNum var20
-num var21 = (-42 )
-printNum var21
-num var22 = -1 * 8 / -1
-printNum var22
-num var23 = 2-3
-printNum var23
-num var24 = 2 - 3
-printNum var24
-num var25 = 2 - -3
-printNum var25
-num var26 = 2- -3
-printNum var26
-num var27 = -2-3
-printNum var27
-num var28 = -2- -3
-printNum var28
-num var29 = -2 - -3
-printNum var29
-num var30 = (-2 - -3)
-printNum var30
-num var31 = ( -2 - -3)
-printNum var31
-num var32 = -2-(-3)
-printNum var32
-num var33 = -2-( -3)
-printNum var33
-num var34 = -2 - (-3)
-printNum var34
-num var35 = -2 - (-3 - (4))
-printNum var35
-num var36 = -2 - (-3 - (4))
-printNum var36
-num var37 = -2 - ( -3 -( -4))
-printNum var37
-num var38 = -2-(-2-(-2-2))
-printNum var38
-num var39 = -2 - (-2 - (-2 - 2))
-printNum var39
-num var40 = -11-(-22 - (-33-(-44 - (-55 - (-66)))))
-printNum var40
+num var1 = 3*4;
+printNum var1;
+num var2 = 12 / 6;
+printNum var2;
+num var3 = 12/6;
+printNum var3;
+num var4 = 5 + 4 * 3;
+printNum var4;
+num var5 = 12 + 34 * 45;
+printNum var5;
+num var6 = (4 / 5);
+printNum var6;
+num var7 = 2 * 2 + 5 * 5;
+printNum var7;
+num var8 = 42;
+printNum var8;
+num var9 = (42);
+printNum var9;
+num var10 = ((42));
+printNum var10;
+num var11 = ( ( 42 ) );
+printNum var11;
+num var12 = 1234*5678;
+printNum var12;
+num var13 = ((12-8)-3);
+printNum var13;
+num var14 = (5*(8/4));
+printNum var14;
+num var15 = (1+2) * 3;
+printNum var15;
+num var16 = (((2+3)*4)+(7+(8/2)));
+printNum var16;
+num var17 = (((((9+(2*(110-(30/2))))*8)+1000)/2)+(((3*3*3*3)+1)/2));
+printNum var17;
+num var18 = -42;
+printNum var18;
+num var19 = (-42);
+printNum var19;
+num var20 = ( -42);
+printNum var20;
+num var21 = (-42 );
+printNum var21;
+num var22 = -1 * 8 / -1;
+printNum var22;
+num var23 = 2-3;
+printNum var23;
+num var24 = 2 - 3;
+printNum var24;
+num var25 = 2 - -3;
+printNum var25;
+num var26 = 2- -3;
+printNum var26;
+num var27 = -2-3;
+printNum var27;
+num var28 = -2- -3;
+printNum var28;
+num var29 = -2 - -3;
+printNum var29;
+num var30 = (-2 - -3);
+printNum var30;
+num var31 = ( -2 - -3);
+printNum var31;
+num var32 = -2-(-3);
+printNum var32;
+num var33 = -2-( -3);
+printNum var33;
+num var34 = -2 - (-3);
+printNum var34;
+num var35 = -2 - (-3 - (4));
+printNum var35;
+num var36 = -2 - (-3 - (4));
+printNum var36;
+num var37 = -2 - ( -3 -( -4));
+printNum var37;
+num var38 = -2-(-2-(-2-2));
+printNum var38;
+num var39 = -2 - (-2 - (-2 - 2));
+printNum var39;
+num var40 = -11-(-22 - (-33-(-44 - (-55 - (-66)))));
+printNum var40;
 
 // Exponents
-num var41 = 3^3
-printNum var41
-num var42 = 4 ^ 4
-printNum var42
-num var43 = 3^3^3
-printNum var43
-num var44 = 3^(3^3)
-printNum var44
-num var45 = 5 + 4 * 3 ^ 2
-printNum var45
+num var41 = 3^3;
+printNum var41;
+num var42 = 4 ^ 4;
+printNum var42;
+num var43 = 3^3^3;
+printNum var43;
+num var44 = 3^(3^3);
+printNum var44;
+num var45 = 5 + 4 * 3 ^ 2;
+printNum var45;
 
 // 32-bit floats
-ish float1 = 3.5
-printIsh float1
-ish float2 = (3.5)
-printIsh float2
-ish float3 = ((3.55))
-printIsh float3
-ish float4 = 3.14159+2.718218
-printIsh float4
+ish float1 = 3.5;
+printIsh float1;
+ish float2 = (3.5);
+printIsh float2;
+ish float3 = ((3.55));
+printIsh float3;
+ish float4 = 3.14159+2.718218;
+printIsh float4;
 
 // Prevent reuse (don't compute the last value, just report the issue and continue)
-num issue1 = 5
-num issue2 = 3 + 4
-num issue1 = 16
+num issue1 = 5;
+num issue2 = 3 + 4;
+num issue1 = 16;
 
 // Spot this issue during the IR phase
-num error = 5 / 0
+num error = 5 / 0;
 
 // Allow copies
-num orig = 4 + 2
-printNum orig
-num copy = orig
-printNum copy
+num orig = 4 + 2;
+printNum orig;
+num copy = orig;
+printNum copy;
 
 // Allow reuse
-num var49 = var1 + var2
-printNum var49
-num var50 = var1 - var2
-printNum var50
-num var51 = var2 - var1
-printNum var51
-num var52 = var1 * var1
-printNum var52
-num var53 = (var3 + var4) * (var5 + var3)
-printNum var53
+num var49 = var1 + var2;
+printNum var49;
+num var50 = var1 - var2;
+printNum var50;
+num var51 = var2 - var1;
+printNum var51;
+num var52 = var1 * var1;
+printNum var52;
+num var53 = (var3 + var4) * (var5 + var3);
+printNum var53;
 
 // Support printable text
-printString "This begins the user input section"
-printString "Supply data and hit enter"
+printString "This begins the user input section";
+printString "Supply data and hit enter";
 
 // Support user input
-printString "Enter a number: "
-num user1 = 0
-readNum user1
-printNum user1
+printString "Enter a number: ";
+num user1 = 0;
+readNum user1;
+printNum user1;
 
-printString "Enter a number: "
-num user2 = 0
-readNum user2
-printNum user2
+printString "Enter a number: ";
+num user2 = 0;
+readNum user2;
+printNum user2;
 
-printString "Enter a number: "
-num user3 = 0
-readNum user3
-printNum user3
+printString "Enter a number: ";
+num user3 = 0;
+readNum user3;
+printNum user3;
 
-printString "Enter a number: "
-num user4 = 0
-readNum user4
-printNum user4
+printString "Enter a number: ";
+num user4 = 0;
+readNum user4;
+printNum user4;
 
-num userResult1 = user1 + user2
-printNum userResult1
-num userResult2 = user3 - user4
-printNum userResult2
-num userResult3 = user1 * user2
-printNum userResult3
-num userResult4 = user3 / user4
-printNum userResult4
+num userResult1 = user1 + user2;
+printNum userResult1;
+num userResult2 = user3 - user4;
+printNum userResult2;
+num userResult3 = user1 * user2;
+printNum userResult3;
+num userResult4 = user3 / user4;
+printNum userResult4;
 
 // Support procedures
 num procedure add(num a, num b) {
-  num result = a + b
-  return result
+  num result = a + b;
+  return result;
 }
 
 num procedure mult(num a, num b) {
-  num result = a * b
-  return result
+  num result = a * b;
+  return result;
 }
 
-num result1 = add(2, 3)
-printNum result1
-num a = 2
-num b = 3
-num result2 = add(a, b)
-printNum result2
-num result3 = mult(a, b)
-printNum result3
-num result4 = mult(a,a)
-printNum result4
-num result5 = mult(b,b)
-printNum result5
-num result7 = add(a, b) - mult(a, b)
-printNum result7
-num result8 = add(a,a) + mult(a,b) * mult(b,b)
-printNum result8
-num result9 = add(add(a,b), mult(b,a)) + 7
-printNum result9
+num result1 = add(2, 3);
+printNum result1;
+num a = 2;
+num b = 3;
+num result2 = add(a, b);
+printNum result2;
+num result3 = mult(a, b);
+printNum result3;
+num result4 = mult(a,a);
+printNum result4;
+num result5 = mult(b,b);
+printNum result5;
+num result7 = add(a, b) - mult(a, b);
+printNum result7;
+num result8 = add(a,a) + mult(a,b) * mult(b,b);
+printNum result8;
+num result9 = add(add(a,b), mult(b,a)) + 7;
+printNum result9;
 
 
 //User procedures
-printString "Result of adding first and second user inputs: "
-num userResult5 = add(user1, user2)
-printNum userResult5
-printString "Result of multiplying third and fourth user inputs: "
-num userResult6 = mult(user3, user4)
-printNum userResult6
+printString "Result of adding first and second user inputs: ";
+num userResult5 = add(user1, user2);
+printNum userResult5;
+printString "Result of multiplying third and fourth user inputs: ";
+num userResult6 = mult(user3, user4);
+printNum userResult6;
 
 
 // Put it all together
-num procedure computeApproxSphereVolume(num radius)
+num procedure computeApproxSphereVolume(num radius) {
 
-  num result = radius ^ 3 * 4 * 31416 / 10000 / 3
-  return result
+  num result = radius ^ 3 * 4 * 31416 / 10000 / 3;
+  return result;
 }
 
-printString "Enter a radius: "
-num userRadius = 0
-readNum userRadius
-num volume = computeApproxSphereVolume(userRadius)
+printString "Enter a radius: ";
+num userRadius = 0;
+readNum userRadius;
+num volume = computeApproxSphereVolume(userRadius);
 
-printString "The volume is: "
-printNum volume
+printString "The volume is: ";
+printNum volume;
 
-printString "Congratulations on the great semester!"
+printString "Congratulations on the great semester!";
+end.
