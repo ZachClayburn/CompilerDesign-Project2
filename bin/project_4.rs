@@ -1,4 +1,5 @@
 use clap::{App, Arg};
+use codegen::{generate_assembly, CodeGenError};
 use compiler_design::*;
 use evaluation::{evaluate, EvaluationError};
 use parser::ast::CompilationUnit;
@@ -43,17 +44,41 @@ fn main() {
             std::process::exit(1);
         }
     };
-    let statements = match parse::<_, CompilationUnit>(scan) {
-        Ok(CompilationUnit { statements, .. }) => statements,
+    let CompilationUnit {
+        statements,
+        name: _,
+    } = match parse::<_, CompilationUnit>(scan) {
+        Ok(compilation_unit) => compilation_unit,
         Err(err) => {
             println!("Error parsing file: {}", err);
             std::process::exit(1);
         }
     };
-    for item in evaluate(statements) {
-        match item {
-            Ok(statement) => println!("{}", statement),
-            Err(EvaluationError { error_msg }) => println!("{}", error_msg),
+
+    println!("Errors encountered during compilation:");
+    let statements = evaluate(statements)
+        .into_iter()
+        .filter(|stmnt| {
+            if let Err(EvaluationError { error_msg }) = stmnt {
+                println!("{}", error_msg);
+                false
+            } else {
+                true
+            }
+        })
+        .map(|stmnt| stmnt.unwrap())
+        .collect::<Vec<_>>();
+
+    let code = match generate_assembly(statements) {
+        Ok(code) => code,
+        Err(CodeGenError { error_msg }) => {
+            eprintln!("{}", error_msg);
+            std::process::exit(1);
         }
+    };
+
+    // TODO write this out to a file
+    for line in code {
+        println!("{}", line);
     }
 }
