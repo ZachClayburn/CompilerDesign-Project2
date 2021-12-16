@@ -248,8 +248,10 @@ impl Scanner {
                         "switch" => Ok(Token::Switch(start)),
                         "case" => Ok(Token::Case(start)),
                         "default" => Ok(Token::Default(start)),
-                        "write" => Ok(Token::Write(start)),
-                        "read" => Ok(Token::Read(start)),
+                        "printNum" => Ok(Token::PrintNum(start)),
+                        "printIsh" => Ok(Token::PrintIsh(start)),
+                        "printString" => Ok(Token::PrintString(start)),
+                        "readNum" => Ok(Token::ReadNum(start)),
                         "for" => Ok(Token::For(start)),
                         "to" => Ok(Token::To(start)),
                         "step" => Ok(Token::Step(start)),
@@ -584,8 +586,8 @@ mod tests {
             switch
             case
             default
-            write
-            read
+            printNum
+            printIsh
             for
             to
             step
@@ -598,8 +600,10 @@ mod tests {
             num
             ish
             string
-            return"
-        });
+            return
+            printString
+            readNum
+        "});
         let tokens: Vec<Token> = scan.map(|x| x.unwrap()).collect();
         let expected = vec![
             Program(Location { line: 1, column: 1 }),
@@ -608,8 +612,8 @@ mod tests {
             Switch(Location { line: 4, column: 1 }),
             Case(Location { line: 5, column: 1 }),
             Default(Location { line: 6, column: 1 }),
-            Write(Location { line: 7, column: 1 }),
-            Read(Location { line: 8, column: 1 }),
+            PrintNum(Location { line: 7, column: 1 }),
+            PrintIsh(Location { line: 8, column: 1 }),
             For(Location { line: 9, column: 1 }),
             To(Location {
                 line: 10,
@@ -657,6 +661,14 @@ mod tests {
             }),
             Return(Location {
                 line: 21,
+                column: 1,
+            }),
+            PrintString(Location {
+                line: 22,
+                column: 1,
+            }),
+            ReadNum(Location {
+                line: 23,
                 column: 1,
             }),
             EOF,

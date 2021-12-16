@@ -32,8 +32,10 @@ pub enum Token {
     Switch(Location),
     Case(Location),
     Default(Location),
-    Write(Location),
-    Read(Location),
+    PrintNum(Location),
+    PrintIsh(Location),
+    PrintString(Location),
+    ReadNum(Location),
     For(Location),
     To(Location),
     Step(Location),
@@ -103,8 +105,10 @@ impl Display for Token {
             Token::Switch(_) => "Switch".fmt(f),
             Token::Case(_) => "Case".fmt(f),
             Token::Default(_) => "Default".fmt(f),
-            Token::Write(_) => "Write".fmt(f),
-            Token::Read(_) => "Read".fmt(f),
+            Token::PrintNum(_) => "PrintNum".fmt(f),
+            Token::PrintIsh(_) => "PrintIsh".fmt(f),
+            Token::PrintString(_) => "PrintString".fmt(f),
+            Token::ReadNum(_) => "ReadNum".fmt(f),
             Token::For(_) => "For".fmt(f),
             Token::To(_) => "To".fmt(f),
             Token::Step(_) => "Step".fmt(f),
@@ -175,8 +179,10 @@ impl Token {
             | Token::Switch(loc)
             | Token::Case(loc)
             | Token::Default(loc)
-            | Token::Write(loc)
-            | Token::Read(loc)
+            | Token::PrintNum(loc)
+            | Token::PrintIsh(loc)
+            | Token::PrintString(loc)
+            | Token::ReadNum(loc)
             | Token::For(loc)
             | Token::To(loc)
             | Token::Step(loc)
@@ -228,7 +234,7 @@ mod test {
     fn tokens_format_correctly() {
         let scan = Scanner::from_text(
             r#"
-            program begin end switch case default write read for to step do if then else array
+            program begin end switch case default printNum printIsh printString readNum for to step do if then else array
             procedure num string return ()[]{};=+ -*/^<><=>===.!=..,
             identifier 1234 12.34
             "String"
@@ -245,8 +251,10 @@ mod test {
             "Switch",
             "Case",
             "Default",
-            "Write",
-            "Read",
+            "PrintNum",
+            "PrintIsh",
+            "PrintString",
+            "ReadNum",
             "For",
             "To",
             "Step",
