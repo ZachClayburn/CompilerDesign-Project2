@@ -27,8 +27,14 @@ test = true
 [[bin]]
 name = "project_3"
 path = "bin/project_3.rs"
+test = false
 
 [[bin]]
 name = "table_viewer"
 path = "bin/table_viewer.rs"
+test = false
+
+[[bin]]
+name = "project_4"
+path = "bin/project_4.rs"
 test = false
