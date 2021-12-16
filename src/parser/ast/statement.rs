@@ -14,6 +14,25 @@ pub enum Statement {
         statements: Vec<Statement>,
     },
     ReturnStatement(Expression),
+    PrintStatement(PrintExpr),
+    ReadStatement(String),
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub enum PrintExpr {
+    Num(String),
+    Ish(String),
+    String(String),
+}
+
+impl Display for PrintExpr {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            PrintExpr::Num(name) => write!(f, "printNum {}", name),
+            PrintExpr::Ish(name) => write!(f, "printIsh {}", name),
+            PrintExpr::String(name) => write!(f, "printString {}", name),
+        }
+    }
 }
 
 impl Display for Statement {
@@ -40,6 +59,8 @@ impl Display for Statement {
                 statements.iter().format("\n    ")
             ),
             Self::ReturnStatement(expr) => write!(f, "return {};", expr),
+            Self::PrintStatement(print_expr) => write!(f, "{};", print_expr),
+            Self::ReadStatement(var) => write!(f, "readNum {}", var),
         }
     }
 }

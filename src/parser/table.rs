@@ -19,6 +19,8 @@ pub(super) enum NonTerminal {
     ParamSpecFirst,
     ParamSpecList,
     ReturnStatement,
+    PrintStatement,
+    ReadStatement,
     Expr,
     ExprPrime,
     Term,
@@ -48,6 +50,8 @@ impl Display for NonTerminal {
             NonTerminal::ParamSpecFirst => "ParamSpecFirst".fmt(f),
             NonTerminal::ParamSpecList => "ParamSpecList".fmt(f),
             NonTerminal::ReturnStatement => "ReturnStatement".fmt(f),
+            NonTerminal::PrintStatement => "PrintStatement".fmt(f),
+            NonTerminal::ReadStatement => "ReadStatement".fmt(f),
             NonTerminal::Expr => "Expr".fmt(f),
             NonTerminal::ExprPrime => "Expr'".fmt(f),
             NonTerminal::Term => "Term".fmt(f),
@@ -103,6 +107,14 @@ impl Table {
                 (
                     StatementList,
                     vec![Left(ReturnStatement), Left(StatementList)],
+                ),
+                (
+                    StatementList,
+                    vec![Left(PrintStatement), Left(StatementList)],
+                ),
+                (
+                    StatementList,
+                    vec![Left(ReadStatement), Left(StatementList)],
                 ),
                 (
                     DeclarationStatement,
@@ -167,6 +179,42 @@ impl Table {
                         Left(Expr),
                         Right(Semicolon(<_>::default())),
                         Left(Reduction(reduce_return_statement)),
+                    ],
+                ),
+                (
+                    PrintStatement,
+                    vec![
+                        Right(PrintNum(<_>::default())),
+                        Right(Identifier(<_>::default())),
+                        Right(Semicolon(<_>::default())),
+                        Left(Reduction(reduce_read_and_print)),
+                    ],
+                ),
+                (
+                    PrintStatement,
+                    vec![
+                        Right(PrintIsh(<_>::default())),
+                        Right(Identifier(<_>::default())),
+                        Right(Semicolon(<_>::default())),
+                        Left(Reduction(reduce_read_and_print)),
+                    ],
+                ),
+                (
+                    PrintStatement,
+                    vec![
+                        Right(PrintString(<_>::default())),
+                        Right(StringLiteral(<_>::default())),
+                        Right(Semicolon(<_>::default())),
+                        Left(Reduction(reduce_read_and_print)),
+                    ],
+                ),
+                (
+                    ReadStatement,
+                    vec![
+                        Right(ReadNum(<_>::default())),
+                        Right(Identifier(<_>::default())),
+                        Right(Semicolon(<_>::default())),
+                        Left(Reduction(reduce_read_and_print)),
                     ],
                 ),
                 (Expr, vec![Left(Term), Left(ExprPrime)]),

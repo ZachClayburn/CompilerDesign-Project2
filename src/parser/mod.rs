@@ -615,4 +615,27 @@ mod test {
         };
         assert_eq!(out, expected);
     }
+
+    #[test]
+    fn reads_and_prints_parse_correctly() {
+        let scan = Scanner::from_text(indoc! {r#"
+            program foo; begin
+                printNum a;
+                printIsh b;
+                printString "string literal";
+                readNum a;
+            end.
+        "#});
+        let out = parse(scan);
+        let expected = Ok(CompilationUnit {
+            name: "foo".into(),
+            statements: vec![
+                Statement::PrintStatement(PrintExpr::Num("a".to_owned())),
+                Statement::PrintStatement(PrintExpr::Ish("b".to_owned())),
+                Statement::PrintStatement(PrintExpr::String("string literal".to_owned())),
+                Statement::ReadStatement("a".to_owned()),
+            ],
+        });
+        assert_eq!(out, expected);
+    }
 }

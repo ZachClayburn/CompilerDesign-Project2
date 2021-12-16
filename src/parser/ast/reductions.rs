@@ -579,3 +579,66 @@ pub fn reduce_procedure_call(mut stack: Vec<ValueItem>) -> Result<Vec<ValueItem>
 
     Ok(stack)
 }
+
+pub fn reduce_read_and_print(mut stack: Vec<ValueItem>) -> Result<Vec<ValueItem>> {
+    use Token::*;
+
+    match stack.pop() {
+        Some(Right(Semicolon(_))) => (),
+        Some(bad) => return Err(format!("Reducion error: Expected ;, but found {}", bad).into()),
+        None => {
+            return Err(format!("Reducion error: Missing ; while trying to reduce program").into())
+        }
+    };
+
+    match stack.pop() {
+        Some(Right(Identifier(TokenInfo { content, .. }))) => {
+            match stack.pop() {
+                Some(Right(PrintNum(_))) => stack.push(Left(AST::Stmnt(Statement::PrintStatement(PrintExpr::Num(content))))),
+                Some(Right(PrintIsh(_))) => stack.push(Left(AST::Stmnt(Statement::PrintStatement(PrintExpr::Ish(content))))),
+                Some(Right(ReadNum(_))) => stack.push(Left(AST::Stmnt(Statement::ReadStatement(content)))),
+                Some(bad) => {
+                    return Err(format!("Reducion error: Expected readNum, printIsh or printNum, but found {}", bad).into())
+                }
+                None => {
+                    return Err(
+                        format!("Reducion error: Missing readNum, printIsh or printNum while trying to reduce program").into(),
+                    )
+                }
+            };
+        }
+        Some(Right(StringLiteral(TokenInfo { content, .. }))) => {
+            match stack.pop() {
+                Some(Right(PrintString(_))) => stack.push(Left(AST::Stmnt(
+                    Statement::PrintStatement(PrintExpr::String(content)),
+                ))),
+                Some(bad) => {
+                    return Err(
+                        format!("Reducion error: Expected PrintString, but found {}", bad).into(),
+                    )
+                }
+                None => {
+                    return Err(format!(
+                        "Reducion error: Missing PrintString while trying to reduce program"
+                    )
+                    .into())
+                }
+            };
+        }
+        Some(bad) => {
+            return Err(format!(
+                "Reducion error: Expected string literal or identifier, but found {}",
+                bad
+            )
+            .into())
+        }
+        None => {
+            return Err(format!(
+            "Reducion error: Missing string literal or identifier while trying to reduce program"
+        )
+            .into())
+        }
+    };
+
+    Ok(stack)
+}
