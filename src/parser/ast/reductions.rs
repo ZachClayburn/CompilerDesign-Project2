@@ -39,7 +39,7 @@ pub fn reduce_value(mut stack: Vec<ValueItem>) -> Result<Vec<ValueItem>> {
             Ok(stack)
         }
         Some(unexpected) => Err(format!(
-            "Expectied a number or variable, but {} was found",
+            "Reducion error: Expectied a number or variable, but {} was found",
             unexpected
         )
         .into()),
@@ -53,8 +53,12 @@ pub fn reduce_binary_op(mut stack: Vec<ValueItem>) -> Result<Vec<ValueItem>> {
     use AST::*;
     let rhs = match stack.pop() {
         Some(Left(Expr(expr))) => expr,
-        Some(bad) => return Err(format!("Expected an expression, found {}", bad).into()),
-        None => return Err("Missing ) while trying to reduce parenthetical".into()),
+        Some(bad) => {
+            return Err(format!("Reducion error: Expected an expression, found {}", bad).into())
+        }
+        None => {
+            return Err("Reducion error: Missing ) while trying to reduce parenthetical".into())
+        }
     };
     let op = match stack.pop().unwrap().unwrap_right() {
         Plus(_) => Operator::Plus,
@@ -62,12 +66,16 @@ pub fn reduce_binary_op(mut stack: Vec<ValueItem>) -> Result<Vec<ValueItem>> {
         Star(_) => Operator::Multiply,
         Div(_) => Operator::Divide,
         Pow(_) => Operator::Power,
-        bad => return Err(format!("{} not a valid binary operator", bad).into()),
+        bad => return Err(format!("Reducion error: {} not a valid binary operator", bad).into()),
     };
     let lhs = match stack.pop() {
         Some(Left(Expr(expr))) => expr,
-        Some(bad) => return Err(format!("Expected an expression, found {}", bad).into()),
-        None => return Err("Missing ) while trying to reduce parenthetical".into()),
+        Some(bad) => {
+            return Err(format!("Reducion error: Expected an expression, found {}", bad).into())
+        }
+        None => {
+            return Err("Reducion error: Missing ) while trying to reduce parenthetical".into())
+        }
     };
 
     stack.push(Left(Expr(BinaryOperation(
@@ -82,18 +90,28 @@ pub fn reduce_binary_op(mut stack: Vec<ValueItem>) -> Result<Vec<ValueItem>> {
 pub fn reduce_parenthetical(mut stack: Vec<ValueItem>) -> Result<Vec<ValueItem>> {
     match stack.pop() {
         Some(Right(Token::RParen(_))) => (),
-        Some(bad) => return Err(format!("Expected ), found {}", bad).into()),
-        None => return Err("Missing ) while trying to reduce parenthetical".into()),
+        Some(bad) => return Err(format!("Reducion error: Expected ), found {}", bad).into()),
+        None => {
+            return Err("Reducion error: Missing ) while trying to reduce parenthetical".into())
+        }
     };
     let expr = match stack.pop() {
         Some(Left(expr)) => expr,
-        Some(bad) => return Err(format!("Expected expression, found {}", bad).into()),
-        None => return Err("Missing expression while trying to reduce parenthetical".into()),
+        Some(bad) => {
+            return Err(format!("Reducion error: Expected expression, found {}", bad).into())
+        }
+        None => {
+            return Err(
+                "Reducion error: Missing expression while trying to reduce parenthetical".into(),
+            )
+        }
     };
     match stack.pop() {
         Some(Right(Token::LParen(_))) => (),
-        Some(bad) => return Err(format!("Expected (, found {}", bad).into()),
-        None => return Err("Missing ( while trying to reduce parenthetical".into()),
+        Some(bad) => return Err(format!("Reducion error: Expected (, found {}", bad).into()),
+        None => {
+            return Err("Reducion error: Missing ( while trying to reduce parenthetical".into())
+        }
     };
 
     stack.push(Left(expr));
@@ -104,13 +122,21 @@ pub fn reduce_unary_operator(mut stack: Vec<ValueItem>) -> Result<Vec<ValueItem>
     use AST::*;
     let expr = match stack.pop() {
         Some(Left(Expr(expr))) => expr,
-        Some(bad) => return Err(format!("Expected expression, found {}", bad).into()),
-        None => return Err("Missing expression while trying to reduce unary operator".into()),
+        Some(bad) => {
+            return Err(format!("Reducion error: Expected expression, found {}", bad).into())
+        }
+        None => {
+            return Err(
+                "Reducion error: Missing expression while trying to reduce unary operator".into(),
+            )
+        }
     };
     match stack.pop() {
         Some(Right(Token::Minus(_))) => (),
-        Some(bad) => return Err(format!("Expected -, found {}", bad).into()),
-        None => return Err("Missing - while trying to reduce unary operator".into()),
+        Some(bad) => return Err(format!("Reducion error: Expected -, found {}", bad).into()),
+        None => {
+            return Err("Reducion error: Missing - while trying to reduce unary operator".into())
+        }
     };
 
     stack.push(Left(Expr(Expression::UnaryOperation(
@@ -125,46 +151,80 @@ pub fn reduce_program(mut stack: Vec<ValueItem>) -> Result<Vec<ValueItem>> {
 
     match stack.pop() {
         Some(Right(Dot(_))) => (),
-        Some(bad) => return Err(format!("Expected ., but found {}", bad).into()),
-        None => return Err(format!("Missing . while trying to reduce program").into()),
+        Some(bad) => return Err(format!("Reducion error: Expected ., but found {}", bad).into()),
+        None => {
+            return Err(format!("Reducion error: Missing . while trying to reduce program").into())
+        }
     };
 
     match stack.pop() {
         Some(Right(End(_))) => (),
-        Some(bad) => return Err(format!("Expected end, but found {}", bad).into()),
-        None => return Err(format!("Missing end while trying to reduce program").into()),
+        Some(bad) => return Err(format!("Reducion error: Expected end, but found {}", bad).into()),
+        None => {
+            return Err(
+                format!("Reducion error: Missing end while trying to reduce program").into(),
+            )
+        }
     };
 
     let statents = match stack.pop() {
         Some(Left(AST::StmntList(list))) => list,
-        Some(bad) => return Err(format!("Expected Statement List, but found {}", bad).into()),
+        Some(bad) => {
+            return Err(
+                format!("Reducion error: Expected Statement List, but found {}", bad).into(),
+            )
+        }
         None => {
-            return Err(format!("Missing Statement List while trying to reduce program").into())
+            return Err(format!(
+                "Reducion error: Missing Statement List while trying to reduce program"
+            )
+            .into())
         }
     };
 
     match stack.pop() {
         Some(Right(Begin(_))) => (),
-        Some(bad) => return Err(format!("Expected begin, but found {}", bad).into()),
-        None => return Err(format!("Missing begin while trying to reduce program").into()),
+        Some(bad) => {
+            return Err(format!("Reducion error: Expected begin, but found {}", bad).into())
+        }
+        None => {
+            return Err(
+                format!("Reducion error: Missing begin while trying to reduce program").into(),
+            )
+        }
     };
 
     match stack.pop() {
         Some(Right(Semicolon(_))) => (),
-        Some(bad) => return Err(format!("Expected ;, but found {}", bad).into()),
-        None => return Err(format!("Missing ; while trying to reduce program").into()),
+        Some(bad) => return Err(format!("Reducion error: Expected ;, but found {}", bad).into()),
+        None => {
+            return Err(format!("Reducion error: Missing ; while trying to reduce program").into())
+        }
     };
 
     let id = match stack.pop() {
         Some(Right(Identifier(TokenInfo { content, .. }))) => content,
-        Some(bad) => return Err(format!("Expected program name, but found {}", bad).into()),
-        None => return Err(format!("Missing program name while trying to reduce program").into()),
+        Some(bad) => {
+            return Err(format!("Reducion error: Expected program name, but found {}", bad).into())
+        }
+        None => {
+            return Err(format!(
+                "Reducion error: Missing program name while trying to reduce program"
+            )
+            .into())
+        }
     };
 
     match stack.pop() {
         Some(Right(Program(_))) => (),
-        Some(bad) => return Err(format!("Expected program, but found {}", bad).into()),
-        None => return Err(format!("Missing program while trying to reduce program").into()),
+        Some(bad) => {
+            return Err(format!("Reducion error: Expected program, but found {}", bad).into())
+        }
+        None => {
+            return Err(
+                format!("Reducion error: Missing program while trying to reduce program").into(),
+            )
+        }
     };
 
     stack.push(Left(AST::Prog(CompilationUnit {
@@ -202,26 +262,41 @@ pub fn reduce_declaration(mut stack: Vec<ValueItem>) -> Result<Vec<ValueItem>> {
 
     match stack.pop() {
         Some(Right(Semicolon(_))) => (),
-        Some(bad) => return Err(format!("Expected ;, but found {}", bad).into()),
-        None => return Err(format!("Missing ; while trying to reduce program").into()),
+        Some(bad) => return Err(format!("Reducion error: Expected ;, but found {}", bad).into()),
+        None => {
+            return Err(format!("Reducion error: Missing ; while trying to reduce program").into())
+        }
     };
 
     let expression = match stack.pop() {
         Some(Left(AST::Expr(expression))) => expression,
-        Some(bad) => return Err(format!("Expected expression, but found {}", bad).into()),
-        None => return Err(format!("Missing expression while trying to reduce program").into()),
+        Some(bad) => {
+            return Err(format!("Reducion error: Expected expression, but found {}", bad).into())
+        }
+        None => {
+            return Err(format!(
+                "Reducion error: Missing expression while trying to reduce program"
+            )
+            .into())
+        }
     };
 
     match stack.pop() {
         Some(Right(Assign(_))) => (),
-        Some(bad) => return Err(format!("Expected =, but found {}", bad).into()),
-        None => return Err(format!("Missing = while trying to reduce program").into()),
+        Some(bad) => return Err(format!("Reducion error: Expected =, but found {}", bad).into()),
+        None => {
+            return Err(format!("Reducion error: Missing = while trying to reduce program").into())
+        }
     };
 
     let name = match stack.pop() {
         Some(Right(Identifier(TokenInfo { content, .. }))) => content,
-        Some(bad) => return Err(format!("Expected name, but found {}", bad).into()),
-        None => return Err(format!("Missing name while trying to reduce program").into()),
+        Some(bad) => return Err(format!("Reducion error: Expected name, but found {}", bad).into()),
+        None => {
+            return Err(
+                format!("Reducion error: Missing name while trying to reduce program").into(),
+            )
+        }
     };
 
     match stack.pop() {
@@ -233,8 +308,12 @@ pub fn reduce_declaration(mut stack: Vec<ValueItem>) -> Result<Vec<ValueItem>> {
             name_and_type: TypedVar::Ish(name),
             expression,
         }))),
-        Some(bad) => return Err(format!("Expected Num, but found {}", bad).into()),
-        None => return Err(format!("Missing Num while trying to reduce program").into()),
+        Some(bad) => return Err(format!("Reducion error: Expected Num, but found {}", bad).into()),
+        None => {
+            return Err(
+                format!("Reducion error: Missing Num while trying to reduce program").into(),
+            )
+        }
     };
 
     Ok(stack)
@@ -245,8 +324,10 @@ pub fn reduce_param_spec(mut stack: Vec<ValueItem>) -> Result<Vec<ValueItem>> {
 
     match stack.pop() {
         Some(Right(RParen(_))) => (),
-        Some(bad) => return Err(format!("Expected ), but found {}", bad).into()),
-        None => return Err(format!("Missing ) while trying to reduce program").into()),
+        Some(bad) => return Err(format!("Reducion error: Expected ), but found {}", bad).into()),
+        None => {
+            return Err(format!("Reducion error: Missing ) while trying to reduce program").into())
+        }
     };
 
     let mut params = Vec::new();
@@ -255,21 +336,45 @@ pub fn reduce_param_spec(mut stack: Vec<ValueItem>) -> Result<Vec<ValueItem>> {
         let name = match stack.pop() {
             Some(Right(LParen(_))) => break,
             Some(Right(Identifier(TokenInfo { content, .. }))) => content,
-            Some(bad) => return Err(format!("Expected Identifier, but found {}", bad).into()),
-            None => return Err(format!("Missing Identifier while trying to reduce program").into()),
+            Some(bad) => {
+                return Err(
+                    format!("Reducion error: Expected Identifier, but found {}", bad).into(),
+                )
+            }
+            None => {
+                return Err(format!(
+                    "Reducion error: Missing Identifier while trying to reduce program"
+                )
+                .into())
+            }
         };
         let param = match stack.pop() {
             Some(Right(Num(_))) => TypedVar::Num(name),
             Some(Right(Ish(_))) => TypedVar::Ish(name),
-            Some(bad) => return Err(format!("Expected num or ish, but found {}", bad).into()),
-            None => return Err(format!("Missing num or ish while trying to reduce program").into()),
+            Some(bad) => {
+                return Err(
+                    format!("Reducion error: Expected num or ish, but found {}", bad).into(),
+                )
+            }
+            None => {
+                return Err(format!(
+                    "Reducion error: Missing num or ish while trying to reduce program"
+                )
+                .into())
+            }
         };
         params.push(param);
         match stack.pop() {
             Some(Right(LParen(_))) => break,
             Some(Right(Comma(_))) => (),
-            Some(bad) => return Err(format!("Expected ), but found {}", bad).into()),
-            None => return Err(format!("Missing ) while trying to reduce program").into()),
+            Some(bad) => {
+                return Err(format!("Reducion error: Expected ), but found {}", bad).into())
+            }
+            None => {
+                return Err(
+                    format!("Reducion error: Missing ) while trying to reduce program").into(),
+                )
+            }
         };
     }
 
@@ -285,20 +390,35 @@ pub fn reduce_return_statement(mut stack: Vec<ValueItem>) -> Result<Vec<ValueIte
 
     match stack.pop() {
         Some(Right(Semicolon(_))) => (),
-        Some(bad) => return Err(format!("Expected ;, but found {}", bad).into()),
-        None => return Err(format!("Missing ; while trying to reduce program").into()),
+        Some(bad) => return Err(format!("Reducion error: Expected ;, but found {}", bad).into()),
+        None => {
+            return Err(format!("Reducion error: Missing ; while trying to reduce program").into())
+        }
     };
 
     let expr = match stack.pop() {
         Some(Left(AST::Expr(expr))) => expr,
-        Some(bad) => return Err(format!("Expected Expression, but found {}", bad).into()),
-        None => return Err(format!("Missing Expression while trying to reduce program").into()),
+        Some(bad) => {
+            return Err(format!("Reducion error: Expected Expression, but found {}", bad).into())
+        }
+        None => {
+            return Err(format!(
+                "Reducion error: Missing Expression while trying to reduce program"
+            )
+            .into())
+        }
     };
 
     match stack.pop() {
         Some(Right(Return(_))) => (),
-        Some(bad) => return Err(format!("Expected Return, but found {}", bad).into()),
-        None => return Err(format!("Missing Return while trying to reduce program").into()),
+        Some(bad) => {
+            return Err(format!("Reducion error: Expected Return, but found {}", bad).into())
+        }
+        None => {
+            return Err(
+                format!("Reducion error: Missing Return while trying to reduce program").into(),
+            )
+        }
     };
 
     stack.push(Left(AST::Stmnt(Statement::ReturnStatement(expr))));
@@ -311,47 +431,84 @@ pub fn reduce_procedure_declaration(mut stack: Vec<ValueItem>) -> Result<Vec<Val
 
     match stack.pop() {
         Some(Right(RBrace(_))) => (),
-        Some(bad) => return Err(format!("Expected }}, but found {}", bad).into()),
-        None => return Err(format!("Missing }} while trying to reduce program").into()),
+        Some(bad) => return Err(format!("Reducion error: Expected }}, but found {}", bad).into()),
+        None => {
+            return Err(format!("Reducion error: Missing }} while trying to reduce program").into())
+        }
     };
 
     let statements = match stack.pop() {
         Some(Left(AST::StmntList(list))) => list,
-        Some(bad) => return Err(format!("Expected Statement List, but found {}", bad).into()),
+        Some(bad) => {
+            return Err(
+                format!("Reducion error: Expected Statement List, but found {}", bad).into(),
+            )
+        }
         None => {
-            return Err(format!("Missing Statement List while trying to reduce program").into())
+            return Err(format!(
+                "Reducion error: Missing Statement List while trying to reduce program"
+            )
+            .into())
         }
     };
 
     match stack.pop() {
         Some(Right(LBrace(_))) => (),
-        Some(bad) => return Err(format!("Expected {{, but found {}", bad).into()),
-        None => return Err(format!("Missing {{ while trying to reduce program").into()),
+        Some(bad) => return Err(format!("Reducion error: Expected {{, but found {}", bad).into()),
+        None => {
+            return Err(format!("Reducion error: Missing {{ while trying to reduce program").into())
+        }
     };
 
     let params = match stack.pop() {
         Some(Left(AST::ParamSpec(list))) => list,
-        Some(bad) => return Err(format!("Expected Param Spec, but found {}", bad).into()),
-        None => return Err(format!("Missing Param Spec while trying to reduce program").into()),
+        Some(bad) => {
+            return Err(format!("Reducion error: Expected Param Spec, but found {}", bad).into())
+        }
+        None => {
+            return Err(format!(
+                "Reducion error: Missing Param Spec while trying to reduce program"
+            )
+            .into())
+        }
     };
 
     let name = match stack.pop() {
         Some(Right(Identifier(TokenInfo { content, .. }))) => content,
-        Some(bad) => return Err(format!("Expected Param Spec, but found {}", bad).into()),
-        None => return Err(format!("Missing Param Spec while trying to reduce program").into()),
+        Some(bad) => {
+            return Err(format!("Reducion error: Expected Param Spec, but found {}", bad).into())
+        }
+        None => {
+            return Err(format!(
+                "Reducion error: Missing Param Spec while trying to reduce program"
+            )
+            .into())
+        }
     };
 
     match stack.pop() {
         Some(Right(Procedure(_))) => (),
-        Some(bad) => return Err(format!("Expected procedure, but found {}", bad).into()),
-        None => return Err(format!("Missing procedure while trying to reduce program").into()),
+        Some(bad) => {
+            return Err(format!("Reducion error: Expected procedure, but found {}", bad).into())
+        }
+        None => {
+            return Err(
+                format!("Reducion error: Missing procedure while trying to reduce program").into(),
+            )
+        }
     };
 
     let name_and_type = match stack.pop() {
         Some(Right(Num(_))) => TypedVar::Num(name),
         Some(Right(Ish(_))) => TypedVar::Ish(name),
-        Some(bad) => return Err(format!("Expected procedure, but found {}", bad).into()),
-        None => return Err(format!("Missing procedure while trying to reduce program").into()),
+        Some(bad) => {
+            return Err(format!("Reducion error: Expected procedure, but found {}", bad).into())
+        }
+        None => {
+            return Err(
+                format!("Reducion error: Missing procedure while trying to reduce program").into(),
+            )
+        }
     };
 
     stack.push(Left(AST::Stmnt(Statement::ProcedureDeclaration {
@@ -368,8 +525,10 @@ pub fn reduce_procedure_call(mut stack: Vec<ValueItem>) -> Result<Vec<ValueItem>
 
     match stack.pop() {
         Some(Right(RParen(_))) => (),
-        Some(bad) => return Err(format!("Expected ), but found {}", bad).into()),
-        None => return Err(format!("Missing ) while trying to reduce program").into()),
+        Some(bad) => return Err(format!("Reducion error: Expected ), but found {}", bad).into()),
+        None => {
+            return Err(format!("Reducion error: Missing ) while trying to reduce program").into())
+        }
     };
 
     let mut args = Vec::new();
@@ -378,16 +537,31 @@ pub fn reduce_procedure_call(mut stack: Vec<ValueItem>) -> Result<Vec<ValueItem>
         let arg = match stack.pop() {
             Some(Right(LParen(_))) => break,
             Some(Left(AST::Expr(expr))) => expr,
-            Some(bad) => return Err(format!("Expected Expression, but found {}", bad).into()),
-            None => return Err(format!("Missing Expression while trying to reduce program").into()),
+            Some(bad) => {
+                return Err(
+                    format!("Reducion error: Expected Expression, but found {}", bad).into(),
+                )
+            }
+            None => {
+                return Err(format!(
+                    "Reducion error: Missing Expression while trying to reduce program"
+                )
+                .into())
+            }
         };
         args.push(arg);
 
         match stack.pop() {
             Some(Right(Comma(_))) => (),
             Some(Right(LParen(_))) => break,
-            Some(bad) => return Err(format!("Expected \",\", but found {}", bad).into()),
-            None => return Err(format!("Missing ) while trying to reduce program").into()),
+            Some(bad) => {
+                return Err(format!("Reducion error: Expected \",\", but found {}", bad).into())
+            }
+            None => {
+                return Err(
+                    format!("Reducion error: Missing ) while trying to reduce program").into(),
+                )
+            }
         };
     }
 
@@ -395,8 +569,10 @@ pub fn reduce_procedure_call(mut stack: Vec<ValueItem>) -> Result<Vec<ValueItem>
 
     let name = match stack.pop() {
         Some(Right(Identifier(TokenInfo { content, .. }))) => content,
-        Some(bad) => return Err(format!("Expected (, but found {}", bad).into()),
-        None => return Err(format!("Missing ( while trying to reduce program").into()),
+        Some(bad) => return Err(format!("Reducion error: Expected (, but found {}", bad).into()),
+        None => {
+            return Err(format!("Reducion error: Missing ( while trying to reduce program").into())
+        }
     };
 
     stack.push(Left(AST::Expr(Expression::ProcedureCall { name, args })));
