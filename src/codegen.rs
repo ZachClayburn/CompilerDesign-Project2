@@ -71,7 +71,21 @@ pub fn generate_assembly(statements: Vec<Statement>) -> Result<String> {
                 ]);
             }
             Statement::PrintStatement(_) => info!("Unsupported print statement"),
-            Statement::ReadStatement(_) => info!("Unsupported read statement"),
+            Statement::ReadStatement(variable) => {
+                let label = match table.get_num_label(variable) {
+                    Ok(label) => label,
+                    Err(CodeGenError { error_msg }) => {
+                        info!("Error in read statment: {}", error_msg);
+                        continue;
+                    }
+                };
+                code.main.extend_from_slice(&[
+                    "lea rdi, [numReader]".to_owned(),
+                    format!("lea rsi, [{}]", label),
+                    "mov rax, 0".to_owned(),
+                    "call scanf".to_owned(),
+                ])
+            }
         }
     }
 
@@ -271,6 +285,53 @@ mod test {
             main:
                             push    rbp
                             mov     rbp, rsp
+                            mov     rdi, numPrinter
+                            mov     rsi, [_num_const_0_a]
+                            mov     rax, 0
+                            call    printf
+                            mov     eax, 0
+                            pop     rbp
+                            ret
+            "#});
+        assert_eq!(assembly, expected);
+    }
+
+    #[test]
+    fn programs_can_read_nums() {
+        let statements = vec![
+            Statement::Declaration {
+                name_and_type: TypedVar::Num("a".to_owned()),
+                expression: Expression::NumberLiteral(0),
+            },
+            Statement::ReadStatement("a".to_owned()),
+            Statement::PrintStatement(PrintExpr::Num("a".to_owned())),
+        ];
+        let assembly = generate_assembly(statements)
+            .unwrap()
+            .lines()
+            .map(|x| x.to_owned())
+            .collect::<Vec<_>>();
+        let expected = flatten_lines(indoc! {r#"
+            global main
+            extern printf
+            extern scanf
+                            section .rodata
+            numPrinter      db "%d",0x0a,0
+            ishPrinter      db "%f",0x0a,0
+            stringPrinter   db "%s",0x0a,0
+            numReader       db "%d",0
+            ishReader       db "%f",0
+                            section .data
+            _num_const_0_a  dd 0
+                            section .bss
+                            section .text
+            main:
+                            push    rbp
+                            mov     rbp, rsp
+                            lea     rdi, [numReader]
+                            lea     rsi, [_num_const_0_a]
+                            mov     rax, 0
+                            call    scanf
                             mov     rdi, numPrinter
                             mov     rsi, [_num_const_0_a]
                             mov     rax, 0
