@@ -10,8 +10,6 @@ use std::{env, fs};
 
 #[cfg(not(tarpaulin_include))]
 fn main() {
-    use std::fs;
-
     let matches = App::new(env!("CARGO_BIN_NAME"))
         .version("1.0")
         .author("Zach Clayburn <zachclayburn@gmail.com>")
