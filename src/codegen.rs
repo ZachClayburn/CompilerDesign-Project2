@@ -37,7 +37,13 @@ pub fn generate_assembly(statements: Vec<Statement>) -> Result<String> {
                 name_and_type: TypedVar::Num(name),
                 expression: Expression::NumberLiteral(value),
             } => {
-                let label = table.new_const_num(name)?;
+                let label = match table.new_const_num(name) {
+                    Ok(label) => label,
+                    Err(CodeGenError { error_msg }) => {
+                        info!("Error in Declaration: {}", error_msg);
+                        continue;
+                    }
+                };
                 code.data.push(format!("{} dd {}", label, value));
             }
             Statement::Declaration {
@@ -62,7 +68,13 @@ pub fn generate_assembly(statements: Vec<Statement>) -> Result<String> {
                 ])
             }
             Statement::PrintStatement(PrintExpr::Num(name)) => {
-                let label = table.get_num_label(name)?;
+                let label = match table.get_num_label(name) {
+                    Ok(label) => label,
+                    Err(CodeGenError { error_msg }) => {
+                        info!("Error in print statment: {}", error_msg);
+                        continue;
+                    }
+                };
                 code.main.extend_from_slice(&[
                     "mov rdi, numPrinter".to_owned(),
                     format!("mov rsi, [{}]", label),
