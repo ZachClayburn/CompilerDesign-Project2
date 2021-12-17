@@ -14,9 +14,9 @@ num = "0.4.0"
 peeking_take_while = "1.0.0"
 simple_logger = { version = "1.13.0", default-features = false, features = ["colors"] }
 itertools = "0.10.1"
+indoc = "1.0.3"
 
 [dev-dependencies]
-indoc = "1.0.3"
 pretty_assertions = "1.0.0"
 
 [[bin]]
