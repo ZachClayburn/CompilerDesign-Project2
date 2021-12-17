@@ -125,9 +125,10 @@ mod test {
 
     #[test]
     fn program_can_print_string() {
-        let statements = vec![Statement::PrintStatement(PrintExpr::String(
-            "Hello, World!".to_owned(),
-        ))];
+        let statements = vec![
+            Statement::PrintStatement(PrintExpr::String("Hello,".to_owned())),
+            Statement::PrintStatement(PrintExpr::String("World!".to_owned())),
+        ];
         let assembly = generate_assembly(statements)
             .unwrap()
             .lines()
@@ -143,7 +144,8 @@ mod test {
             stringPrinter   db "%s",0x0a,0
             numReader       db "%d",0
             ishReader       db "%f",0
-            _str_0          db "Hello, World!",0
+            _str_0          db "Hello,",0
+            _str_1          db "World!",0
                             section .data
                             section .bss
                             section .text
@@ -151,6 +153,10 @@ mod test {
                             push    rbp
                             mov     rbp, rsp
                             mov     esi, _str_0
+                            mov     edi, stringPrinter
+                            mov     eax, 0
+                            call    printf
+                            mov     esi, _str_1
                             mov     edi, stringPrinter
                             mov     eax, 0
                             call    printf
