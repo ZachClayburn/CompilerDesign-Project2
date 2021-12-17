@@ -16,9 +16,9 @@ pub fn generate_assembly(statements: Vec<Statement>) -> Result<String> {
 
     // Add call to exit
     code.main.extend_from_slice(&[
-        "mov rax, 60".to_owned(),
-        "xor rdi, rdi".to_owned(),
-        "syscall".to_owned(),
+        "mov eax, 0".to_owned(),
+        "pop rbp".to_owned(),
+        "ret".to_owned(),
     ]);
 
     Ok(format!("{}", code))
@@ -84,9 +84,11 @@ mod test {
                             section .bss
                             section .text
             main:
-                            mov     rax, 60
-                            xor     rdi, rdi
-                            syscall
+                            push    rbp
+                            mov     rbp, rsp
+                            mov     eax, 0
+                            pop     rbp
+                            ret
             "#});
         assert_eq!(assembly, expected);
     }

@@ -24,7 +24,7 @@ impl Default for CodeFile {
             data: Default::default(),
             bss: Default::default(),
             procedures: vec![],
-            main: Default::default(),
+            main: vec!["push rbp".to_owned(), "mov rbp, rsp".to_owned()],
         }
     }
 }
