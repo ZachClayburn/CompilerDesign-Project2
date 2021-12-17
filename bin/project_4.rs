@@ -6,9 +6,12 @@ use parser::ast::CompilationUnit;
 use parser::parse;
 use scanner::Scanner;
 use simple_logger::SimpleLogger;
+use std::{env, fs};
 
 #[cfg(not(tarpaulin_include))]
 fn main() {
+    use std::fs;
+
     let matches = App::new(env!("CARGO_BIN_NAME"))
         .version("1.0")
         .author("Zach Clayburn <zachclayburn@gmail.com>")
@@ -44,10 +47,7 @@ fn main() {
             std::process::exit(1);
         }
     };
-    let CompilationUnit {
-        statements,
-        name: _,
-    } = match parse::<_, CompilationUnit>(scan) {
+    let CompilationUnit { statements, name } = match parse::<_, CompilationUnit>(scan) {
         Ok(compilation_unit) => compilation_unit,
         Err(err) => {
             println!("Error parsing file: {}", err);
@@ -72,13 +72,22 @@ fn main() {
     let code = match generate_assembly(statements) {
         Ok(code) => code,
         Err(CodeGenError { error_msg }) => {
-            eprintln!("{}", error_msg);
+            eprintln!("Failed to compile: {}", error_msg);
             std::process::exit(1);
         }
     };
 
-    // TODO write this out to a file
-    for line in code {
-        println!("{}", line);
+    let mut out = match env::current_dir() {
+        Ok(dir) => dir,
+        Err(err) => {
+            eprintln!("{}", err);
+            std::process::exit(1);
+        }
+    };
+    out.push(name);
+    println!("hello!");
+
+    if let Err(err) = fs::write(out.with_extension("asm"), code) {
+        eprintln!("Could not write to output: {}", err);
     }
 }
