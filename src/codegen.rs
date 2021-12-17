@@ -4,11 +4,25 @@ mod symbol_table;
 use crate::parser::ast::{Expression, PrintExpr, Statement, TypedVar};
 use code_file::CodeFile;
 use log::info;
-use symbol_table::SymbolTable;
+use symbol_table::{NumValue, SymbolTable};
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct CodeGenError {
     pub error_msg: String,
+}
+
+impl Into<CodeGenError> for String {
+    fn into(self) -> CodeGenError {
+        CodeGenError { error_msg: self }
+    }
+}
+
+impl Into<CodeGenError> for &str {
+    fn into(self) -> CodeGenError {
+        CodeGenError {
+            error_msg: self.to_owned(),
+        }
+    }
 }
 
 pub type Result<T> = std::result::Result<T, CodeGenError>;
@@ -47,6 +61,15 @@ pub fn generate_assembly(statements: Vec<Statement>) -> Result<String> {
                     "call printf".to_owned(),
                 ])
             }
+            Statement::PrintStatement(PrintExpr::Num(name)) => match table.get_num_label(name)? {
+                NumValue::Constant(label) => code.main.extend_from_slice(&[
+                    "mov rdi, numPrinter".to_owned(),
+                    format!("mov rsi, [{}]", label),
+                    "mov rax, 0".to_owned(),
+                    "call printf".to_owned(),
+                ]),
+                NumValue::Variable => info!("Unsupported print statement"),
+            },
             Statement::PrintStatement(_) => info!("Unsupported print statement"),
             Statement::ReadStatement(_) => info!("Unsupported read statement"),
         }
@@ -210,6 +233,48 @@ mod test {
             main:
                             push    rbp
                             mov     rbp, rsp
+                            mov     eax, 0
+                            pop     rbp
+                            ret
+            "#});
+        assert_eq!(assembly, expected);
+    }
+
+    #[test]
+    pub fn programs_can_print_nums() {
+        let statements = vec![
+            Statement::Declaration {
+                name_and_type: TypedVar::Num("a".to_owned()),
+                expression: Expression::NumberLiteral(42),
+            },
+            Statement::PrintStatement(PrintExpr::Num("a".to_owned())),
+        ];
+        let assembly = generate_assembly(statements)
+            .unwrap()
+            .lines()
+            .map(|x| x.to_owned())
+            .collect::<Vec<_>>();
+        let expected = flatten_lines(indoc! {r#"
+            global main
+            extern printf
+            extern scanf
+                            section .rodata
+            numPrinter      db "%d",0x0a,0
+            ishPrinter      db "%f",0x0a,0
+            stringPrinter   db "%s",0x0a,0
+            numReader       db "%d",0
+            ishReader       db "%f",0
+            _num_const_0_a  dd 42
+                            section .data
+                            section .bss
+                            section .text
+            main:
+                            push    rbp
+                            mov     rbp, rsp
+                            mov     rdi, numPrinter
+                            mov     rsi, [_num_const_0_a]
+                            mov     rax, 0
+                            call    printf
                             mov     eax, 0
                             pop     rbp
                             ret
