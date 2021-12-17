@@ -4,7 +4,7 @@ mod symbol_table;
 use crate::parser::ast::{Expression, PrintExpr, Statement, TypedVar};
 use code_file::CodeFile;
 use log::info;
-use symbol_table::{NumValue, SymbolTable};
+use symbol_table::SymbolTable;
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct CodeGenError {
@@ -38,7 +38,7 @@ pub fn generate_assembly(statements: Vec<Statement>) -> Result<String> {
                 expression: Expression::NumberLiteral(value),
             } => {
                 let label = table.new_const_num(name)?;
-                code.rodata.push(format!("{} dd {}", label, value));
+                code.data.push(format!("{} dd {}", label, value));
             }
             Statement::Declaration {
                 name_and_type: _,
@@ -61,15 +61,15 @@ pub fn generate_assembly(statements: Vec<Statement>) -> Result<String> {
                     "call printf".to_owned(),
                 ])
             }
-            Statement::PrintStatement(PrintExpr::Num(name)) => match table.get_num_label(name)? {
-                NumValue::Constant(label) => code.main.extend_from_slice(&[
+            Statement::PrintStatement(PrintExpr::Num(name)) => {
+                let label = table.get_num_label(name)?;
+                code.main.extend_from_slice(&[
                     "mov rdi, numPrinter".to_owned(),
                     format!("mov rsi, [{}]", label),
                     "mov rax, 0".to_owned(),
                     "call printf".to_owned(),
-                ]),
-                NumValue::Variable => info!("Unsupported print statement"),
-            },
+                ]);
+            }
             Statement::PrintStatement(_) => info!("Unsupported print statement"),
             Statement::ReadStatement(_) => info!("Unsupported read statement"),
         }
@@ -225,9 +225,9 @@ mod test {
             stringPrinter   db "%s",0x0a,0
             numReader       db "%d",0
             ishReader       db "%f",0
+                            section .data
             _num_const_0_a  dd 42
             _num_const_1_b  dd 3
-                            section .data
                             section .bss
                             section .text
             main:
@@ -264,8 +264,8 @@ mod test {
             stringPrinter   db "%s",0x0a,0
             numReader       db "%d",0
             ishReader       db "%f",0
-            _num_const_0_a  dd 42
                             section .data
+            _num_const_0_a  dd 42
                             section .bss
                             section .text
             main:
