@@ -1,8 +1,6 @@
 use indoc::indoc;
 use std::fmt::Display;
 
-use itertools::Itertools;
-
 pub(super) struct CodeFile {
     pub rodata: Vec<String>,
     pub data: Vec<String>,
